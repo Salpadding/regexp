@@ -22,14 +22,15 @@ type token struct {
 }
 
 var cache = map[rune]*token{
-	or:               &token{code: token_or},
-	closure:          &token{code: token_closure},
-	leftParentheses:  &token{code: token_leftParentheses},
-	rightParentheses: &token{code: token_rightParentheses},
+	or:               &token{code: token_or, value: '|'},
+	closure:          &token{code: token_closure, value: '*'},
+	leftParentheses:  &token{code: token_leftParentheses, value: '('},
+	rightParentheses: &token{code: token_rightParentheses, value: ')'},
 }
 
 var concat = &token{
-	code: token_concat,
+	code:  token_concat,
+	value: '+',
 }
 
 func tokenize(reader io.Reader) []*token {
@@ -53,5 +54,26 @@ func tokenize(reader io.Reader) []*token {
 		}
 	}
 	// TODO: insert concat tokens
-	return pretokenized
+	var res []*token
+	for i, token := range pretokenized {
+		res = append(res, token)
+		if i+1 == len(pretokenized) {
+			break
+		}
+		next := pretokenized[i+1]
+		if token.code == token_or || next.code == token_or {
+			continue
+		}
+		if next.code == token_closure {
+			continue
+		}
+		if next.code == token_rightParentheses {
+			continue
+		}
+		if token.code == token_leftParentheses {
+			continue
+		}
+		res = append(res, concat)
+	}
+	return res
 }
