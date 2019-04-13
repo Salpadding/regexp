@@ -11,11 +11,11 @@ const (
 )
 
 type nfa struct {
-	states       []int                 // states represented by graph
-	transitions  map[int][]*transition // transation functions of this automata
-	current      int                   // current state of the nfa, typicallly initialzed 1
-	finalStates  []int
-	initialState int
+	states        *states        // states represented by graph
+	transitionSet *transitionSet // transation functions of this automata
+	current       int            // current state of the nfa, typicallly initialzed 1
+	finalStates   *integerSet
+	initialState  int
 }
 
 type transition struct {
@@ -25,19 +25,25 @@ type transition struct {
 
 // [1] -- a --> [[2]]
 func newNFA(char rune) *nfa {
-	return &nfa{
-		states: []int{1, 2},
-		transitions: map[int][]*transition{
-			1: []*transition{
-				&transition{
-					to:   2,
-					char: char,
-				},
-			},
+	var finalStates integerSet = map[int]bool{
+		2: true,
+	}
+	var ts transitions = []*transition{
+		&transition{
+			to:   2,
+			char: char,
 		},
-		current:      1,
-		finalStates:  []int{2},
-		initialState: 1,
+	}
+	var states states = []int{1, 2}
+	var transitionSet transitionSet = map[int]*transitions{
+		1: &ts,
+	}
+	return &nfa{
+		states:        &states,
+		transitionSet: &transitionSet,
+		current:       1,
+		finalStates:   &finalStates,
+		initialState:  1,
 	}
 }
 
@@ -45,14 +51,22 @@ func (n *nfa) Input(r rune) {
 	if n.current == -1 {
 		return
 	}
-	ts := n.transitions[n.current]
-	for _, t := range ts {
+	if !n.transitionSet.has(n.current) {
+		n.current = -1
+		return
+	}
+	ts := n.transitionSet.get(n.current)
+	for _, t := range *ts {
 		if t.char == r {
 			n.current = t.to
 			return
 		}
 	}
 	n.current = -1
+}
+
+func (n *nfa) Reset() {
+	n.current = 0
 }
 
 func (n *nfa) InputString(s string) {
@@ -62,59 +76,52 @@ func (n *nfa) InputString(s string) {
 }
 
 func (n *nfa) IsAccept() bool {
-	for _, s := range n.finalStates {
-		if s == n.current {
-			return true
-		}
-	}
-	return false
+	return n.finalStates.has(n.current)
 }
 
 // [1] -- a --> [[2]] + [1] -- b --> [[2]] ===> [1] -- a --> [2] -- b --> [[3]]
 func (n *nfa) concat(n2 *nfa) *nfa {
 
 	// append offsets
-	offset := len(n.states) - 1
-	newStates := make([]int, len(n.states)+len(n2.states)-1)
-	n2StatesPadded := make([]int, len(n2.states))
-	for idx, s := range n2.states {
-		n2StatesPadded[idx] = offset + s
-	}
-	copy(newStates, append(n.states, n2StatesPadded[1:]...))
+	offset := n.states.len() - 1
 
-	newFinals := make([]int, len(n2.finalStates))
-	for idx, s := range n2.finalStates {
-		newFinals[idx] = offset + s
-	}
-	transitions := make(map[int][]*transition, len(n.transitions)+len(n2.transitions))
-	for k, v := range n2.transitions {
-		_, ok := transitions[k]
-		if !ok {
-			transitions[k+offset] = make([]*transition, len(v))
-		}
-		for idx, t := range v {
-			transitions[k+offset][idx] = &transition{
-				to:   t.to + offset,
-				char: t.char,
-			}
-		}
-	}
-	for k, v := range n.transitions {
-		_, ok := transitions[k]
-		if !ok {
-			transitions[k] = make([]*transition, len(v))
-		}
-		for idx, t := range v {
-			transitions[k][idx] = &transition{
-				to:   t.to,
-				char: t.char,
-			}
-		}
-	}
 	return &nfa{
-		states:      newStates,
-		transitions: transitions,
+		states: n.states.concat(
+			n2.states.slice(1, n2.states.len()).offset(offset),
+		),
+		transitionSet: n.transitionSet.union(
+			n2.transitionSet.offset(offset),
+		),
+		current:     1,
+		finalStates: n2.finalStates.offset(offset),
+	}
+}
+
+func (n *nfa) or(n2 *nfa) *nfa {
+	offset := n.states.len() - 1
+
+	t1 := n2.transitionSet.remove(1)
+	t1 = t1.offset(offset)
+	transitions := n2.transitionSet.offset(offset)
+	transitions.add(1, t1)
+	newFinals := n.finalStates.union(
+		n2.finalStates.offset(offset),
+	)
+	return &nfa{
+		states: n.states.concat(
+			n2.states.slice(1, n2.states.len()).offset(offset),
+		),
+		transitionSet: n.transitionSet.union(
+			transitions,
+		),
 		current:     1,
 		finalStates: newFinals,
 	}
+}
+
+func (n *nfa) closure() *nfa {
+	for _, k := range n.finalStates.entries() {
+		n.transitionSet.add(k, n.transitionSet.get(1))
+	}
+	return n
 }

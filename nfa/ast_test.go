@@ -44,3 +44,13 @@ func TestBuildAST3(t *testing.T) {
 	assert.Equal(t, 'k', tree.rightChild.rightChild.rightChild.rightChild.value)
 	assert.Equal(t, 'a', tree.leftChild.leftChild.value)
 }
+
+func TestBuildAST4(t *testing.T) {
+	res := tokenize(bytes.NewBufferString("a*"))
+	tree := buildAST(&tokenStack{
+		data: res,
+		pc:   0,
+	}, nil)
+	assert.NotNil(t, tree)
+	assert.Equal(t, token_closure, tree.code)
+}

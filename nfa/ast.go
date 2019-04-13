@@ -18,6 +18,10 @@ func (s *tokenStack) pop() (*token, error) {
 	return t, nil
 }
 
+func (s *tokenStack) push(tk *token) {
+	s.data = append(s.data, tk)
+}
+
 func (s *tokenStack) peek() (*token, error) {
 	if s.pc >= len(s.data) {
 		return nil, errors.New("eof")
@@ -28,6 +32,37 @@ func (s *tokenStack) peek() (*token, error) {
 
 func (s *tokenStack) shift(idx int) {
 	s.pc += idx
+}
+
+func newStack(data []*token) *tokenStack {
+	if data == nil {
+		data = make([]*token, 0)
+	}
+	return &tokenStack{
+		data: data,
+		pc:   0,
+	}
+}
+
+func traverse(tree *token, cb func(*token)) {
+	if tree == nil {
+		return
+	}
+	cb(tree)
+	if tree.leftChild != nil {
+		traverse(tree.leftChild, cb)
+	}
+	if tree.rightChild != nil {
+		traverse(tree.rightChild, cb)
+	}
+}
+
+func (tree *token) stack() *tokenStack {
+	var tks []*token
+	traverse(tree, func(tk *token) {
+		tks = append([]*token{tk}, tks...)
+	})
+	return newStack(tks)
 }
 
 func buildAST(s *tokenStack, left *token) *token {
@@ -49,7 +84,7 @@ func buildAST(s *tokenStack, left *token) *token {
 				s.shift(-1)
 				return buildAST(s, ntk)
 			}
-			return l
+			return ntk
 		case token_concat:
 			r = buildAST(s, nil)
 			if r == nil {
