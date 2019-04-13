@@ -26,22 +26,32 @@ func (s *tokenStack) peek() (*token, error) {
 	return t, nil
 }
 
-func buildAST(s *tokenStack) *token {
-	var l *token
+func (s *tokenStack) shift(idx int) {
+	s.pc += idx
+}
+
+func buildAST(s *tokenStack, left *token) *token {
+	l := left
 	var r *token
 	for tk, err := s.pop(); err == nil; tk, err = s.pop() {
 		switch tk.code {
 		case token_leftParentheses:
-			l = buildAST(s)
+			l = buildAST(s, nil)
 		case token_rightParentheses:
 			return l
 		case token_closure:
-			return &token{
+			tk, err = s.pop()
+			ntk := &token{
 				code:      token_closure,
 				leftChild: l,
 			}
+			if err == nil && tk.code == token_concat {
+				s.shift(-1)
+				return buildAST(s, ntk)
+			}
+			return l
 		case token_concat:
-			r = buildAST(s)
+			r = buildAST(s, nil)
 			if r == nil {
 				return l
 			}
@@ -51,7 +61,7 @@ func buildAST(s *tokenStack) *token {
 				rightChild: r,
 			}
 		case token_or:
-			r = buildAST(s)
+			r = buildAST(s, nil)
 			if r == nil {
 				return l
 			}

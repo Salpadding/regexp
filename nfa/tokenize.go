@@ -33,6 +33,7 @@ var concat = &token{
 	value: '+',
 }
 
+// TODO: keep parentheses closed always
 func tokenize(reader io.Reader) []*token {
 	var pretokenized []*token
 	runeReader := bufio.NewReader(reader)
