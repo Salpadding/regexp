@@ -23,6 +23,6 @@ func TestEvalMore(t *testing.T) {
 func TestEvalMore2(t *testing.T) {
 	nfa := New("(a|b)*b")
 	nfa.InputString("b")
-	fmt.Println(nfa.)
+	fmt.Println(nfa.current)
 	assert.True(t, nfa.IsAccept())
 }
