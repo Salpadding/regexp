@@ -1,4 +1,4 @@
-package nfa
+package dfa
 
 import (
 	"testing"
@@ -50,6 +50,10 @@ func TestClosure(t *testing.T) {
 	n := newNFA('a')
 	n = n.closure()
 	n.InputString("aaaaaaa")
+	assert.True(t, n.IsAccept())
+	n = newNFA('a')
+	n = n.closure()
+	n.InputString("")
 	assert.True(t, n.IsAccept())
 }
 

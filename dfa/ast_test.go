@@ -1,4 +1,4 @@
-package nfa
+package dfa
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package nfa
+package dfa
 
 import (
 	"bufio"
@@ -12,6 +12,7 @@ const (
 	token_closure
 	token_leftParentheses
 	token_rightParentheses
+	token_wildcard
 )
 
 type token struct {
@@ -26,6 +27,7 @@ var cache = map[rune]*token{
 	closure:          &token{code: token_closure, value: '*'},
 	leftParentheses:  &token{code: token_leftParentheses, value: '('},
 	rightParentheses: &token{code: token_rightParentheses, value: ')'},
+	dot:              &token{code: token_wildcard},
 }
 
 var concat = &token{
@@ -49,6 +51,8 @@ func tokenize(reader io.Reader) []*token {
 			}
 			pretokenized = append(pretokenized, &token{code: token_char, value: r})
 		case leftParentheses, rightParentheses, or, closure:
+			pretokenized = append(pretokenized, cache[r])
+		case dot:
 			pretokenized = append(pretokenized, cache[r])
 		default:
 			pretokenized = append(pretokenized, &token{code: token_char, value: r})

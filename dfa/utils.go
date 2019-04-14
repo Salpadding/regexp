@@ -1,4 +1,4 @@
-package nfa
+package dfa
 
 type integerSet map[int]bool
 
@@ -80,6 +80,17 @@ func (i *integerSet) offset(offset int) *integerSet {
 
 type transitionSet map[int]*transitions
 
+func (s *transitionSet) len() int {
+	res := 0
+	for k, v := range *s {
+		if k != 0 && v != nil {
+			res++
+		}
+	}
+	return res
+}
+
+// WARNING: not purify
 func (s *transitionSet) remove(val int) *transitions {
 	removed := (*s)[val]
 	(*s)[val] = nil
@@ -95,8 +106,16 @@ func (s *transitionSet) get(val int) *transitions {
 	return (*s)[val]
 }
 
-func (s *transitionSet) add(key int, ts *transitions) {
-	(*s)[key] = ts
+func (s *transitionSet) add(key int, ts *transitions) *transitionSet {
+	if (*s)[key] == nil {
+		(*s)[key] = ts
+		return s
+	}
+	oldts := *(*s)[key]
+	newts := *ts
+	newts = append(oldts, newts...)
+	(*s)[key] = &newts
+	return s
 }
 
 func (s *transitionSet) union(s2 *transitionSet) *transitionSet {
@@ -105,18 +124,13 @@ func (s *transitionSet) union(s2 *transitionSet) *transitionSet {
 		if v == nil {
 			continue
 		}
-		res[k] = v
+		res.add(k, v)
 	}
 	for k, v := range *s2 {
 		if v == nil {
 			continue
 		}
-		if res[k] != nil {
-			var ts transitions = append(*(res[k]), *v...)
-			res[k] = &ts
-		} else {
-			res[k] = v
-		}
+		res.add(k, v)
 	}
 	return &res
 }
@@ -125,7 +139,7 @@ func (s *transitionSet) offset(offset int) *transitionSet {
 	var res transitionSet = make(map[int]*transitions, len(*s))
 	for k, v := range *s {
 		if v != nil {
-			res[k+offset] = v.offset(offset)
+			res.add(k+offset, v.offset(offset))
 		}
 	}
 	return &res

@@ -1,4 +1,4 @@
-package nfa
+package dfa
 
 const (
 	leftParentheses       = '('
@@ -7,10 +7,11 @@ const (
 	or                    = '|'
 	closure               = '*'
 	whiteSpace            = ' '
+	dot                   = '.'
 	epsilon          rune = 0
 )
 
-type nfa struct {
+type dfa struct {
 	states        *states        // states represented by graph
 	transitionSet *transitionSet // transation functions of this automata
 	current       int            // current state of the nfa, typicallly initialzed 1
@@ -24,7 +25,7 @@ type transition struct {
 }
 
 // [1] -- a --> [[2]]
-func newNFA(char rune) *nfa {
+func newNFA(char rune) *dfa {
 	var finalStates integerSet = map[int]bool{
 		2: true,
 	}
@@ -38,7 +39,7 @@ func newNFA(char rune) *nfa {
 	var transitionSet transitionSet = map[int]*transitions{
 		1: &ts,
 	}
-	return &nfa{
+	return &dfa{
 		states:        &states,
 		transitionSet: &transitionSet,
 		current:       1,
@@ -47,7 +48,7 @@ func newNFA(char rune) *nfa {
 	}
 }
 
-func (n *nfa) Input(r rune) {
+func (n *dfa) Input(r rune) {
 	if n.current == -1 {
 		return
 	}
@@ -65,63 +66,78 @@ func (n *nfa) Input(r rune) {
 	n.current = -1
 }
 
-func (n *nfa) Reset() {
+func (n *dfa) Reset() {
 	n.current = 0
 }
 
-func (n *nfa) InputString(s string) {
+func (n *dfa) InputString(s string) {
 	for _, r := range s {
 		n.Input(r)
 	}
 }
 
-func (n *nfa) IsAccept() bool {
+func (n *dfa) IsAccept() bool {
 	return n.finalStates.has(n.current)
 }
 
 // [1] -- a --> [[2]] + [1] -- b --> [[2]] ===> [1] -- a --> [2] -- b --> [[3]]
-func (n *nfa) concat(n2 *nfa) *nfa {
+func (n *dfa) concat(n2 *dfa) *dfa {
+	// 核心思想是增加把 1 的 final states 作为 2 的初始状态
 
 	// append offsets
 	offset := n.states.len() - 1
+	copied2 := n2.transitionSet.offset(0)
+	t1 := copied2.remove(1)
+	t1 = t1.offset(offset)
+	copied1 := n.transitionSet.offset(0)
 
-	return &nfa{
+	for _, k := range n.finalStates.entries() {
+		copied1.add(k, t1)
+	}
+	return &dfa{
 		states: n.states.concat(
 			n2.states.slice(1, n2.states.len()).offset(offset),
 		),
-		transitionSet: n.transitionSet.union(
-			n2.transitionSet.offset(offset),
-		),
-		current:     1,
-		finalStates: n2.finalStates.offset(offset),
+		transitionSet: copied1.union(copied2.offset(offset)),
+		current:       1,
+		finalStates:   n2.finalStates.offset(offset),
 	}
 }
 
-func (n *nfa) or(n2 *nfa) *nfa {
+func (n *dfa) or(n2 *dfa) *dfa {
+	// 核心思想是取两个final state 为并集, 把 2 的初始状态对应的 trans 加上 offset 给1
 	offset := n.states.len() - 1
 
-	t1 := n2.transitionSet.remove(1)
+	copied := n2.transitionSet.copy()
+	t1 := copied.remove(1)
 	t1 = t1.offset(offset)
-	transitions := n2.transitionSet.offset(offset)
-	transitions.add(1, t1)
+	copied = copied.offset(offset).add(1, t1)
 	newFinals := n.finalStates.union(
 		n2.finalStates.offset(offset),
 	)
-	return &nfa{
+	return &dfa{
 		states: n.states.concat(
 			n2.states.slice(1, n2.states.len()).offset(offset),
 		),
 		transitionSet: n.transitionSet.union(
-			transitions,
+			copied,
 		),
 		current:     1,
 		finalStates: newFinals,
 	}
 }
 
-func (n *nfa) closure() *nfa {
+func (n *dfa) closure() *dfa {
+	copied := n.transitionSet.offset(0)
 	for _, k := range n.finalStates.entries() {
-		n.transitionSet.add(k, n.transitionSet.get(1))
+		copied = copied.add(k, n.transitionSet.get(1))
 	}
-	return n
+	fcopied := n.finalStates.offset(0)
+	fcopied.add(1)
+	return &dfa{
+		states:        n.states.offset(0),
+		transitionSet: copied,
+		current:       1,
+		finalStates:   fcopied,
+	}
 }
