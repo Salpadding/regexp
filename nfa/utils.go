@@ -1,8 +1,8 @@
-package dfa
+package nfa
 
 type integerSet map[int]bool
 
-type transitions []*transition
+type transitions []transition
 
 type states []int
 
@@ -76,6 +76,16 @@ func (i *integerSet) offset(offset int) *integerSet {
 		}
 	}
 	return &res
+}
+
+func (i *integerSet) len() int {
+	var res int
+	for k, v := range *i {
+		if v {
+			res++
+		}
+	}
+	return res
 }
 
 type transitionSet map[int]*transitions

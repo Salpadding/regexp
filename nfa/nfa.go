@@ -1,4 +1,4 @@
-package dfa
+package nfa
 
 const (
 	leftParentheses       = '('
@@ -14,14 +14,32 @@ const (
 type dfa struct {
 	states        *states        // states represented by graph
 	transitionSet *transitionSet // transation functions of this automata
-	current       int            // current state of the nfa, typicallly initialzed 1
+	currentStates *integerSet    // current state of the nfa, typicallly initialzed 1
 	finalStates   *integerSet
 	initialState  int
 }
 
-type transition struct {
-	to   int
+type transition interface {
+	setTo(int)
+	to() int
+	guard(rune) bool
+}
+
+type charTransition struct {
+	t    int
 	char rune
+}
+
+func (c *charTransition) to() int {
+	return c.t
+}
+
+func (c *charTransition) setTo(in int) {
+	c.t = in
+}
+
+func (c *charTransition) guard(in rune) bool {
+	return c.char == in
 }
 
 // [1] -- a --> [[2]]
@@ -29,9 +47,12 @@ func newNFA(char rune) *dfa {
 	var finalStates integerSet = map[int]bool{
 		2: true,
 	}
-	var ts transitions = []*transition{
-		&transition{
-			to:   2,
+	var currentStates integerSet = map[int]bool{
+		1: true,
+	}
+	var ts transitions = []transition{
+		&charTransition{
+			t:    2,
 			char: char,
 		},
 	}
@@ -42,14 +63,14 @@ func newNFA(char rune) *dfa {
 	return &dfa{
 		states:        &states,
 		transitionSet: &transitionSet,
-		current:       1,
+		currentStates: &currentStates,
 		finalStates:   &finalStates,
 		initialState:  1,
 	}
 }
 
 func (n *dfa) Input(r rune) {
-	if n.current == -1 {
+	if n.currentStates.has(-1) && n.currentStates.len() == 1 {
 		return
 	}
 	if !n.transitionSet.has(n.current) {
@@ -58,9 +79,8 @@ func (n *dfa) Input(r rune) {
 	}
 	ts := n.transitionSet.get(n.current)
 	for _, t := range *ts {
-		if t.char == r {
-			n.current = t.to
-			return
+		if t.guard(r) {
+			n.currentStates.add(t.to())
 		}
 	}
 	n.current = -1
