@@ -80,7 +80,7 @@ func (i *integerSet) offset(offset int) *integerSet {
 
 func (i *integerSet) len() int {
 	var res int
-	for k, v := range *i {
+	for _, v := range *i {
 		if v {
 			res++
 		}
@@ -160,12 +160,11 @@ func (s *transitionSet) copy() *transitionSet {
 }
 
 func (t *transitions) offset(offset int) *transitions {
-	var res transitions = make([]*transition, len(*t))
+	var res transitions = make([]transition, len(*t))
 	for idx, t := range *t {
-		res[idx] = &transition{
-			to:   t.to + offset,
-			char: t.char,
-		}
+		copied := t.copy()
+		copied.setTo(t.to() + offset)
+		res[idx] = copied
 	}
 	return &res
 }

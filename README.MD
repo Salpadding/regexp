@@ -1,6 +1,6 @@
 # Regexp
 
-a regular expression engine based on deterministic finite automata.
+a regular expression engine based on non-deterministic finite automata.
 
 ```go
 import(

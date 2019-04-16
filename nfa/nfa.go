@@ -11,7 +11,7 @@ const (
 	epsilon          rune = 0
 )
 
-type dfa struct {
+type nfa struct {
 	states        *states        // states represented by graph
 	transitionSet *transitionSet // transation functions of this automata
 	currentStates *integerSet    // current state of the nfa, typicallly initialzed 1
@@ -23,6 +23,7 @@ type transition interface {
 	setTo(int)
 	to() int
 	guard(rune) bool
+	copy() transition
 }
 
 type charTransition struct {
@@ -42,8 +43,15 @@ func (c *charTransition) guard(in rune) bool {
 	return c.char == in
 }
 
+func (c *charTransition) copy() transition {
+	return &charTransition{
+		t:    c.t,
+		char: c.char,
+	}
+}
+
 // [1] -- a --> [[2]]
-func newNFA(char rune) *dfa {
+func newNFA(char rune) *nfa {
 	var finalStates integerSet = map[int]bool{
 		2: true,
 	}
@@ -60,7 +68,7 @@ func newNFA(char rune) *dfa {
 	var transitionSet transitionSet = map[int]*transitions{
 		1: &ts,
 	}
-	return &dfa{
+	return &nfa{
 		states:        &states,
 		transitionSet: &transitionSet,
 		currentStates: &currentStates,
@@ -69,41 +77,52 @@ func newNFA(char rune) *dfa {
 	}
 }
 
-func (n *dfa) Input(r rune) {
+func (n *nfa) Input(r rune) {
 	if n.currentStates.has(-1) && n.currentStates.len() == 1 {
 		return
 	}
-	if !n.transitionSet.has(n.current) {
-		n.current = -1
-		return
-	}
-	ts := n.transitionSet.get(n.current)
-	for _, t := range *ts {
-		if t.guard(r) {
-			n.currentStates.add(t.to())
+	var newStates integerSet = make(map[int]bool)
+	flag := false
+	for _, state := range n.currentStates.entries() {
+		for _, t := range *n.transitionSet.get(state) {
+			if t.guard(r) {
+				newStates.add(t.to())
+				flag = true
+			}
 		}
 	}
-	n.current = -1
+	if !flag {
+		newStates.add(-1)
+	}
+	n.currentStates = &newStates
 }
 
-func (n *dfa) Reset() {
-	n.current = 0
+func (n *nfa) Reset() {
+	var newStates integerSet = make(map[int]bool)
+	n.currentStates = &newStates
 }
 
-func (n *dfa) InputString(s string) {
+func (n *nfa) InputString(s string) {
 	for _, r := range s {
 		n.Input(r)
 	}
 }
 
-func (n *dfa) IsAccept() bool {
-	return n.finalStates.has(n.current)
+func (n *nfa) IsAccept() bool {
+	for _, state := range n.currentStates.entries() {
+		if n.finalStates.has(state) {
+			return true
+		}
+	}
+	return false
 }
 
 // [1] -- a --> [[2]] + [1] -- b --> [[2]] ===> [1] -- a --> [2] -- b --> [[3]]
-func (n *dfa) concat(n2 *dfa) *dfa {
+func (n *nfa) concat(n2 *nfa) *nfa {
 	// 核心思想是增加把 1 的 final states 作为 2 的初始状态
-
+	var currentStates integerSet = map[int]bool{
+		1: true,
+	}
 	// append offsets
 	offset := n.states.len() - 1
 	copied2 := n2.transitionSet.offset(0)
@@ -114,17 +133,22 @@ func (n *dfa) concat(n2 *dfa) *dfa {
 	for _, k := range n.finalStates.entries() {
 		copied1.add(k, t1)
 	}
-	return &dfa{
+	return &nfa{
 		states: n.states.concat(
 			n2.states.slice(1, n2.states.len()).offset(offset),
 		),
 		transitionSet: copied1.union(copied2.offset(offset)),
-		current:       1,
+		currentStates: &currentStates,
 		finalStates:   n2.finalStates.offset(offset),
 	}
 }
 
-func (n *dfa) or(n2 *dfa) *dfa {
+func (n *nfa) or(n2 *nfa) *nfa {
+
+	var currentStates integerSet = map[int]bool{
+		1: true,
+	}
+
 	// 核心思想是取两个final state 为并集, 把 2 的初始状态对应的 trans 加上 offset 给1
 	offset := n.states.len() - 1
 
@@ -135,29 +159,32 @@ func (n *dfa) or(n2 *dfa) *dfa {
 	newFinals := n.finalStates.union(
 		n2.finalStates.offset(offset),
 	)
-	return &dfa{
+	return &nfa{
 		states: n.states.concat(
 			n2.states.slice(1, n2.states.len()).offset(offset),
 		),
 		transitionSet: n.transitionSet.union(
 			copied,
 		),
-		current:     1,
-		finalStates: newFinals,
+		currentStates: &currentStates,
+		finalStates:   newFinals,
 	}
 }
 
-func (n *dfa) closure() *dfa {
+func (n *nfa) closure() *nfa {
+	var currentStates integerSet = map[int]bool{
+		1: true,
+	}
 	copied := n.transitionSet.offset(0)
 	for _, k := range n.finalStates.entries() {
 		copied = copied.add(k, n.transitionSet.get(1))
 	}
 	fcopied := n.finalStates.offset(0)
 	fcopied.add(1)
-	return &dfa{
+	return &nfa{
 		states:        n.states.offset(0),
 		transitionSet: copied,
-		current:       1,
+		currentStates: &currentStates,
 		finalStates:   fcopied,
 	}
 }
