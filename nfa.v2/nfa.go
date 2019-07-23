@@ -3,6 +3,8 @@ package nfa_v2
 type state int
 
 const (
+	// epsilon transition
+	// 0xffff is large enough to avoid char code collision
 	epsilon = 0xffff
 )
 
@@ -107,12 +109,12 @@ type NFA struct {
 	// all possibly state continuously starts from zero
 
 	finalStates stateSet                    // accepted states or final states
-	transitions map[rune]map[state]stateSet // transitions, contains epsilon transitions, the transition result f an input is non deterministic (a set of results)
+	transitions map[rune]map[state]stateSet // contains epsilon transitions, the transition result of an input is non deterministic (a set of results)
 
-	maximumState state // maximum state number
+	maximumState state // maximum state number, for quickly thompson construction
 
 	currentStates stateSet
-	rejected      bool
+	rejected      bool // whether in error state
 }
 
 func (n *NFA) Input(r rune) {
@@ -183,7 +185,7 @@ func NewChar(r rune) *NFA {
 	return &NFA{
 		finalStates: newStateSet(1),
 		transitions: map[rune]map[state]stateSet{
-			r: {0: newStateSet().add(1)},
+			r: {0: newStateSet(1)},
 		},
 		maximumState: 1,
 	}
@@ -211,7 +213,7 @@ func unionTrans(t1 map[state]stateSet, t2 map[state]stateSet) map[state]stateSet
 	for k, v := range t1 {
 		_, ok := t2[k]
 		if ok {
-			panic("transition union fail")
+			panic("transition union fail") // when offset not correctly added
 		}
 		res[k] = v
 	}
@@ -245,6 +247,7 @@ func unionTransitions(tss1 map[rune]map[state]stateSet, tss2 map[rune]map[state]
 	return res
 }
 
+// add a transition rule
 func (n *NFA) addTransition(r rune, from, to state) {
 	_, ok := n.transitions[r]
 	if !ok {
@@ -258,6 +261,8 @@ func (n *NFA) addTransition(r rune, from, to state) {
 }
 
 // thompson construction for ab
+// 1. offset the later nfa
+// 2. add an epsilon transition between them
 func (n *NFA) concat(n1 *NFA) *NFA {
 	n2 := n1.offset(int(n.maximumState) + 1)
 	res := &NFA{
@@ -272,11 +277,14 @@ func (n *NFA) concat(n1 *NFA) *NFA {
 }
 
 // thompson construction fo a|b
+// 1. offset both nfa
+// 2. add an epsilon from 0 to them
+// 3. add epsilon transitions to final state
 func (n *NFA) or(n1 *NFA) *NFA {
 	n3 := n.offset(1)
 	n4 := n1.offset(int(n3.maximumState) + 1)
 	res := &NFA{
-		finalStates:  newStateSet().add(n4.maximumState + 1),
+		finalStates:  newStateSet(n4.maximumState + 1),
 		transitions:  unionTransitions(n3.transitions, n4.transitions),
 		maximumState: n4.maximumState + 1,
 	}
@@ -292,10 +300,14 @@ func (n *NFA) or(n1 *NFA) *NFA {
 }
 
 // thompson construction fo a*
+// 1. offset the nfa
+// 2. add an epsilon from 0 to final state
+// 3. add epsilon transitions to final state
+// 4. add epsilon transition to 1
 func (n *NFA) kleen() *NFA {
 	n1 := n.offset(1)
 	res := &NFA{
-		finalStates:  newStateSet().add(n1.maximumState + 1),
+		finalStates:  newStateSet(n1.maximumState + 1),
 		transitions:  n1.transitions,
 		maximumState: n1.maximumState + 1,
 	}

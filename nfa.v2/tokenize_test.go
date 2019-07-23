@@ -2,6 +2,7 @@ package nfa_v2
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,4 +22,10 @@ func TestTokenize(t *testing.T) {
 	assert.Equal(t, tokenChar, res[7].code)
 	assert.Equal(t, concat, res[8])
 	assert.Equal(t, tokenChar, res[9].code)
+}
+
+func TestGetRune(t *testing.T){
+	assert.True(t, '中' < 0xffff)
+	assert.True(t, '国' > 0xff)
+	fmt.Println(string(rune(65)))
 }
