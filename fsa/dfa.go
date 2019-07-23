@@ -70,8 +70,9 @@ func (n *NFA) ToDFA() *DFA {
 	}
 
 	dfa := &DFA{
-		transitions: trans,
-		finalStates: newStateSet(),
+		transitions:  trans,
+		finalStates:  newStateSet(),
+		maximumState: state(len(dfaStates) - 1),
 	}
 
 	for i, s := range dfaStates {
@@ -93,6 +94,23 @@ type DFA struct {
 	finalStates stateSet
 
 	rejected bool
+
+	maximumState state
+}
+
+// dfa is a special case of nfa
+func (d *DFA) ToNFA() *NFA {
+	nfa := &NFA{
+		finalStates:  d.finalStates,
+		transitions:  make(map[rune]map[state]stateSet, len(d.transitions)),
+		maximumState: d.maximumState,
+	}
+	for k, v := range d.transitions {
+		for from, to := range v {
+			nfa.addTransition(k, from, to)
+		}
+	}
+	return nfa
 }
 
 func (d *DFA) Input(rs ...rune) {
@@ -120,4 +138,8 @@ func (d *DFA) InputString(s string) {
 
 func (d *DFA) IsAccept() bool {
 	return !d.rejected && d.finalStates.has(d.currentState)
+}
+
+func(d *DFA) Reset(){
+	d.currentState = 0
 }

@@ -74,13 +74,13 @@ func buildAST(s *tokenStack, left *token) *token {
 			l = buildAST(s, nil)
 		case tokenRightParentheses:
 			return l
-		case tokenClosure:
-			tk, err = s.pop()
+		case tokenClosure, tokenNoneOrOne, tokenOneOrMore:
+			tk2, err := s.pop()
 			ntk := &token{
-				code:      tokenClosure,
+				code:      tk.code,
 				leftChild: l,
 			}
-			if err == nil && tk.code == tokenConcat {
+			if err == nil && tk2.code == tokenConcat {
 				s.shift(-1)
 				return buildAST(s, ntk)
 			}

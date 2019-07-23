@@ -81,3 +81,16 @@ func TestDFAOrClosureConcat(t *testing.T) {
 	n.InputString("abababababaaaaabbbc")
 	assert.True(t, n.IsAccept())
 }
+
+func TestWildcard(t *testing.T) {
+	n := newWildCard().kleen().ToDFA()
+	n.InputString("abcdafafjofaj-2r02-f]2vgjadv;gkdfvamjadofff  dsfgkkk  -")
+	assert.True(t, n.IsAccept())
+	n = newWildCard().concat(NewChar('a')).ToDFA()
+	n.InputString("ca")
+	assert.True(t, n.IsAccept())
+	n = newWildCard().concat(NewChar('a')).ToDFA()
+	n.InputString("cb")
+	assert.False(t, n.IsAccept())
+}
+

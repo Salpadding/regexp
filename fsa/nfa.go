@@ -103,7 +103,7 @@ func (set stateSet) intersection(s2 stateSet) stateSet {
 	return res
 }
 
-func(set stateSet) equal(set2 stateSet) bool{
+func (set stateSet) equal(set2 stateSet) bool {
 	for s, ok := range set {
 		if !ok {
 			continue
@@ -140,7 +140,7 @@ type NFA struct {
 	rejected      bool // whether in error state
 }
 
-func (n *NFA) Input(r rune) {
+func (n *NFA) input(r rune) {
 	if n.rejected {
 		return
 	}
@@ -163,6 +163,12 @@ func (n *NFA) Input(r rune) {
 	}
 }
 
+func (n *NFA) Input(rs ...rune) {
+	for _, r := range rs {
+		n.input(r)
+	}
+}
+
 func (n *NFA) InputString(s string) {
 	for _, r := range s {
 		n.Input(r)
@@ -170,7 +176,7 @@ func (n *NFA) InputString(s string) {
 }
 
 func (n *NFA) IsAccept() bool {
-	if n.rejected{
+	if n.rejected {
 		return false
 	}
 	if n.currentStates == nil {
@@ -344,4 +350,60 @@ func (n *NFA) kleen() *NFA {
 		res.addTransition(epsilon, s, n1.maximumState+1)
 	}
 	return res
+}
+
+// new wildcard nfa
+func newWildCard() *NFA {
+	res := NewChar(0)
+	for r := rune(0); r < 0x7f; r++ {
+		res.addTransition(r, 0, 1)
+	}
+	return res
+}
+
+func newDigital() *NFA {
+	res := NewChar('0')
+	for r := '0'; r <= '9'; r++ {
+		res.addTransition(r, 0, 1)
+	}
+	return res
+}
+
+func newLetters() *NFA {
+	res := NewChar('a')
+	for r := 'a'; r <= 'z'; r++ {
+		res.addTransition(r, 0, 1)
+	}
+	for r := 'A'; r <= 'Z'; r++ {
+		res.addTransition(r, 0, 1)
+	}
+	return res
+}
+
+func newRange(start, end rune) *NFA {
+	res := NewChar(start)
+	for r := start; r <= end; r++ {
+		res.addTransition(r, 0, 1)
+	}
+	return res
+}
+
+func newNonDigital() *NFA {
+	res := NewChar(0)
+	for r := rune(0); r < 0x7f && !('0' <= r && r <= '9'); r++ {
+		res.addTransition(r, 0, 1)
+	}
+	return res
+}
+
+func newNonLetter() *NFA {
+	res := NewChar(0)
+	for r := rune(0); r < 0x7f && !('a' <= r && r <= 'z') && !('A' <= r && r <= 'Z'); r++ {
+		res.addTransition(r, 0, 1)
+	}
+	return res
+}
+
+func (n *NFA) Reset() {
+	n.currentStates = newStateSet(0)
 }
