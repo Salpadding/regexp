@@ -1,4 +1,4 @@
-package nfa_v2
+package fsa
 
 import (
 	"bufio"
