@@ -19,6 +19,7 @@ func (n *NFA) trans(alpha rune, in stateSet) stateSet {
 func (n *NFA) ToDFA() *DFA {
 	// each state in the DFA will correspond to a set of NFA states.
 	dfaStates := []stateSet{n.closure(map[state]bool{0: true})}
+	traversed := make(map[int]bool)
 	trans := make(map[rune]map[state]state)
 
 	indexOf := func(set stateSet) int {
@@ -43,8 +44,15 @@ func (n *NFA) ToDFA() *DFA {
 	fn := func() {
 		tmp := make([]stateSet, len(dfaStates))
 		copy(tmp, dfaStates)
-		for _, s := range tmp {
+		for i, s := range tmp {
+			if traversed[i] {
+				continue
+			}
+			traversed[i] = true
 			for alpha := range n.transitions {
+				if alpha == epsilon {
+					continue
+				}
 				res := n.trans(alpha, s)
 				addTrans(alpha, s, res)
 			}
