@@ -2,19 +2,8 @@ package fsa
 
 import (
 	"bytes"
+	"fmt"
 )
-
-type nfaStack []*NFA
-
-func (s *nfaStack) push(n *NFA) {
-	*s = append(*s, n)
-}
-
-func (s *nfaStack) pop() *NFA {
-	top := (*s)[len(*s)-1]
-	*s = (*s)[:len(*s)-1]
-	return top
-}
 
 func New(regexp string) *NFA {
 	res := tokenize(bytes.NewBufferString(regexp))
@@ -22,29 +11,20 @@ func New(regexp string) *NFA {
 		data: res,
 		pc:   0,
 	}, nil)
-	stack := tree.stack()
-	var nfaStack nfaStack = make([]*NFA, 0)
-	for tk, err := stack.pop(); err == nil; tk, err = stack.pop() {
-		switch tk.code {
-		case tokenClosure:
-			nfaStack.push(
-				nfaStack.pop().kleen(),
-			)
-		case tokenConcat:
-			a := nfaStack.pop()
-			b := nfaStack.pop()
-			nfaStack.push(a.concat(b))
-		case tokenOr:
-			a := nfaStack.pop()
-			b := nfaStack.pop()
-			nfaStack.push(a.or(b))
-		case tokenChar:
-			nfaStack.push(
-				NewChar(tk.value),
-			)
-		default:
-			panic("unexpected token")
-		}
+	return eval(tree)
+}
+
+func eval(tree *token) *NFA {
+	switch tree.code {
+	case tokenChar:
+		return NewChar(tree.value)
+	case tokenConcat:
+		return eval(tree.leftChild).concat(eval(tree.rightChild))
+	case tokenOr:
+		return eval(tree.leftChild).or(eval(tree.rightChild))
+	case tokenClosure:
+		return eval(tree.leftChild).kleen()
+	default:
+		panic(fmt.Sprintf("unexpected token type %d", tree.code))
 	}
-	return nfaStack.pop()
 }

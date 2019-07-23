@@ -2,6 +2,7 @@ package fsa
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,4 +54,14 @@ func TestBuildAST4(t *testing.T) {
 	}, nil)
 	assert.NotNil(t, tree)
 	assert.Equal(t, tokenClosure, tree.code)
+}
+
+
+func TestBuildAST5(t *testing.T) {
+	res := tokenize(bytes.NewBufferString("ab|cd"))
+	buildAST(&tokenStack{
+		data: res,
+		pc:   0,
+	}, nil)
+	fmt.Println("===========")
 }

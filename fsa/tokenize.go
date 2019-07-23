@@ -5,14 +5,16 @@ import (
 	"io"
 )
 
+type code int
+
 const (
-	tokenChar = iota // character
+	tokenChar code = iota // character
 	tokenConcat
-	tokenOr      // represent |
-	tokenClosure // kleen closure
+	tokenOr       // represent |
+	tokenClosure  // kleen closure
 	tokenLeftParentheses
 	tokenRightParentheses
-	tokenWildcard // . match any character
+	tokenWildcard  // . match any character
 )
 
 const (
@@ -26,7 +28,7 @@ const (
 )
 
 type token struct {
-	code       int
+	code       code
 	value      rune
 	leftChild  *token
 	rightChild *token
@@ -51,7 +53,7 @@ func tokenize(reader io.Reader) []*token {
 	runeReader := bufio.NewReader(reader)
 	for r, _, err := runeReader.ReadRune(); err == nil; r, _, err = runeReader.ReadRune() {
 		switch r {
-		case whiteSpace:
+		case whiteSpace, '\t':
 			continue
 		case escape:
 			// TODO: \s \w \d \n ...
@@ -68,7 +70,7 @@ func tokenize(reader io.Reader) []*token {
 			pretokenized = append(pretokenized, &token{code: tokenChar, value: r})
 		}
 	}
-	// TODO: insert concat tokens
+	// insert concat token between
 	var res []*token
 	for i, token := range pretokenized {
 		res = append(res, token)

@@ -3,14 +3,20 @@
 a regular expression engine based on non-deterministic finite automata.
 
 ```go
-import(
-    "fmt"
+package main
 
-    "github.com/Salpadding/regexp/nfa"
+import (
+	"fmt"
+
+	"github.com/Salpadding/regexp/re"
 )
-func main(){
-	nfa := nfa.New("( a | b ) * cd")
-	nfa.InputString("aaaaaabbbbbbbaaaaabbbcd")
-	fmt.Println(nfa.IsAccept())
+
+func main() {
+	reg := re.Compile("( a | b ) * cd")
+	reg.InputString("aaaaaabbbbbbbaaaaabbbcd")
+	fmt.Println(reg.IsAccept())
+	reg.InputString("----")
+	fmt.Println(reg.IsAccept())
 }
+
 ```

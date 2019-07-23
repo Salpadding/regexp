@@ -15,7 +15,7 @@ func (n *NFA) trans(alpha rune, in stateSet) stateSet {
 	return n.closure(tmp)
 }
 
-// converting an NFA to a DFA
+// converting an NFA to a DFA, implements http://web.cecs.pdx.edu/~harry/compilers/slides/LexicalPart3.pdf
 func (n *NFA) ToDFA() *DFA {
 	// each state in the DFA will correspond to a set of NFA states.
 	dfaStates := []stateSet{n.closure(map[state]bool{0: true})}

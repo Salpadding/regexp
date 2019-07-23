@@ -44,6 +44,8 @@ func TestDFAOrMore(t *testing.T) {
 	n := NewChar('a').or(NewChar('b')).or(NewChar('c')).or(NewChar('d')).ToDFA()
 	n.Input('d')
 	assert.True(t, n.IsAccept())
+	n.Input('a')
+	assert.False(t, n.IsAccept())
 }
 
 func TestDFAClosure(t *testing.T) {
