@@ -1,4 +1,4 @@
-package nfa
+package nfa_v2
 
 import (
 	"errors"

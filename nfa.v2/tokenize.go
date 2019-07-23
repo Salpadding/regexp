@@ -1,4 +1,4 @@
-package nfa
+package nfa_v2
 
 import (
 	"bufio"
@@ -13,6 +13,16 @@ const (
 	tokenLeftParentheses
 	tokenRightParentheses
 	tokenWildcard // . match any character
+)
+
+const (
+	leftParentheses  = '('
+	rightParentheses = ')'
+	escape           = '\\'
+	or               = '|'
+	closure          = '*'
+	whiteSpace       = ' '
+	dot              = '.'
 )
 
 type token struct {

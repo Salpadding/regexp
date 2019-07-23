@@ -1,34 +1,34 @@
-package nfa
+package nfa_v2
 
 import (
 	"bytes"
 )
 
-type nfaStack []*nfa
+type nfaStack []*NFA
 
-func (s *nfaStack) push(n *nfa) {
-	(*s) = append(*s, n)
+func (s *nfaStack) push(n *NFA) {
+	*s = append(*s, n)
 }
 
-func (s *nfaStack) pop() *nfa {
+func (s *nfaStack) pop() *NFA {
 	top := (*s)[len(*s)-1]
-	(*s) = (*s)[:len(*s)-1]
+	*s = (*s)[:len(*s)-1]
 	return top
 }
 
-func New(regexp string) *nfa {
+func New(regexp string) *NFA {
 	res := tokenize(bytes.NewBufferString(regexp))
 	tree := buildAST(&tokenStack{
 		data: res,
 		pc:   0,
 	}, nil)
 	stack := tree.stack()
-	var nfaStack nfaStack = make([]*nfa, 0)
+	var nfaStack nfaStack = make([]*NFA, 0)
 	for tk, err := stack.pop(); err == nil; tk, err = stack.pop() {
 		switch tk.code {
 		case tokenClosure:
 			nfaStack.push(
-				nfaStack.pop().closure(),
+				nfaStack.pop().kleen(),
 			)
 		case tokenConcat:
 			a := nfaStack.pop()
@@ -40,7 +40,7 @@ func New(regexp string) *nfa {
 			nfaStack.push(a.or(b))
 		case tokenChar:
 			nfaStack.push(
-				newNFA(tk.value),
+				NewChar(tk.value),
 			)
 		default:
 			panic("unexpected token")

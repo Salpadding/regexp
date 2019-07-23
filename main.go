@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/Salpadding/regexp/nfa"
+	nfa_v2 "github.com/Salpadding/regexp/nfa.v2"
 )
 
 func main() {
-	nfa := nfa.New("( a | b ) * cd")
+	nfa := nfa_v2.New("( a | b ) * cd")
 	nfa.InputString("aaaaaabbbbbbbaaaaabbbcd")
 	fmt.Println(nfa.IsAccept())
 }

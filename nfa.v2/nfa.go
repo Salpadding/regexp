@@ -3,11 +3,15 @@ package nfa_v2
 type state int
 
 const (
-	epsilon = 0xffffffff
+	epsilon = 0xffff
 )
 
-func newStateSet() stateSet {
-	return make(map[state]bool)
+func newStateSet(states ...state) stateSet {
+	res := make(map[state]bool)
+	for _, s := range states {
+		res[s] = true
+	}
+	return res
 }
 
 type stateSet map[state]bool
@@ -46,6 +50,17 @@ func (set stateSet) copy() stateSet {
 	for s, ok := range set {
 		if ok {
 			res[s] = true
+		}
+	}
+	return res
+}
+
+// util method for thompson construction
+func (set stateSet) offset(i int) stateSet {
+	res := make(map[state]bool)
+	for s, ok := range set {
+		if ok {
+			res[s+state(i)] = true
 		}
 	}
 	return res
@@ -92,14 +107,53 @@ type NFA struct {
 	// all possibly state continuously starts from zero
 
 	finalStates stateSet                    // accepted states or final states
-	transitions map[rune]map[state]stateSet // transitions, may contains epsilon transitions
+	transitions map[rune]map[state]stateSet // transitions, contains epsilon transitions, the transition result f an input is non deterministic (a set of results)
 
-	maximumState state // maximum state
+	maximumState state // maximum state number
+
+	currentStates stateSet
+	rejected      bool
+}
+
+func (n *NFA) Input(r rune) {
+	if n.rejected {
+		return
+	}
+	if n.currentStates == nil {
+		n.currentStates = newStateSet(0)
+	}
+	t, ok := n.transitions[r]
+	if !ok {
+		n.rejected = true
+		return
+	}
+	tmp := n.closure(n.currentStates)
+	tmp2 := newStateSet()
+	for _, s := range tmp.elements() {
+		tmp2 = tmp2.union(t[s])
+	}
+	n.currentStates = tmp2
+	if tmp2.size() == 0 {
+		n.rejected = true
+	}
+}
+
+func (n *NFA) InputString(s string) {
+	for _, r := range s {
+		n.Input(r)
+	}
+}
+
+func (n *NFA) IsAccept() bool {
+	if n.currentStates == nil {
+		n.currentStates = newStateSet(0)
+	}
+	return n.closure(n.currentStates).intersection(n.finalStates).size() > 0
 }
 
 // epsilon closure of states
 func (n *NFA) closure(set stateSet) stateSet {
-	closure := stateSet{}.copy()
+	closure := set.copy()
 	fn := func() {
 		epsilonTransitions, ok := n.transitions[epsilon]
 		if !ok {
@@ -125,9 +179,9 @@ func (n *NFA) closure(set stateSet) stateSet {
 	return closure
 }
 
-func NewRune(r rune) *NFA {
+func NewChar(r rune) *NFA {
 	return &NFA{
-		finalStates: newStateSet().add(1),
+		finalStates: newStateSet(1),
 		transitions: map[rune]map[state]stateSet{
 			r: {0: newStateSet().add(1)},
 		},
@@ -137,43 +191,41 @@ func NewRune(r rune) *NFA {
 
 // util method for thompson construction
 func (n *NFA) offset(i int) *NFA {
-	finalStates := make(map[state]bool, len(n.finalStates))
-	for k, ok := range n.finalStates {
-		if !ok {
-			continue
-		}
-		finalStates[k+state(i)] = true
-	}
 	transitions := make(map[rune]map[state]stateSet, len(n.transitions))
 	for r, v := range n.transitions {
 		transitions[r] = make(map[state]stateSet, len(v))
 		for l, m := range v {
-			m2 := newStateSet()
-			for _, s := range m.elements() {
-				m2.add(s + state(i))
-			}
-			transitions[r][l+state(i)] = m2
+			transitions[r][l+state(i)] = m.offset(i)
 		}
 	}
-
 	return &NFA{
 		transitions:  transitions,
-		finalStates:  finalStates,
+		finalStates:  n.finalStates.offset(i),
 		maximumState: n.maximumState + state(i),
 	}
 }
 
+// util method for thompson construction
 func unionTrans(t1 map[state]stateSet, t2 map[state]stateSet) map[state]stateSet {
 	res := make(map[state]stateSet)
 	for k, v := range t1 {
+		_, ok := t2[k]
+		if ok {
+			panic("transition union fail")
+		}
 		res[k] = v
 	}
 	for k, v := range t2 {
+		_, ok := t1[k]
+		if ok {
+			panic("transition union fail")
+		}
 		res[k] = v
 	}
 	return res
 }
 
+// util method for thompson construction
 func unionTransitions(tss1 map[rune]map[state]stateSet, tss2 map[rune]map[state]stateSet) map[rune]map[state]stateSet {
 	res := make(map[rune]map[state]stateSet)
 	for r, ts := range tss1 {
@@ -205,13 +257,13 @@ func (n *NFA) addTransition(r rune, from, to state) {
 	n.transitions[r][from].add(to)
 }
 
-// thompson construction
+// thompson construction for ab
 func (n *NFA) concat(n1 *NFA) *NFA {
 	n2 := n1.offset(int(n.maximumState) + 1)
 	res := &NFA{
 		finalStates:  n2.finalStates,
 		transitions:  unionTransitions(n.transitions, n2.transitions),
-		maximumState: n1.maximumState,
+		maximumState: n2.maximumState,
 	}
 	for _, s := range n.finalStates.elements() {
 		res.addTransition(epsilon, s, n.maximumState+1)
@@ -219,7 +271,7 @@ func (n *NFA) concat(n1 *NFA) *NFA {
 	return res
 }
 
-// thompson construction
+// thompson construction fo a|b
 func (n *NFA) or(n1 *NFA) *NFA {
 	n3 := n.offset(1)
 	n4 := n1.offset(int(n3.maximumState) + 1)
@@ -239,6 +291,7 @@ func (n *NFA) or(n1 *NFA) *NFA {
 	return res
 }
 
+// thompson construction fo a*
 func (n *NFA) kleen() *NFA {
 	n1 := n.offset(1)
 	res := &NFA{
