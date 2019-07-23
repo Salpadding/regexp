@@ -119,5 +119,5 @@ func (d *DFA) InputString(s string) {
 }
 
 func (d *DFA) IsAccept() bool {
-	return d.finalStates.has(d.currentState)
+	return !d.rejected && d.finalStates.has(d.currentState)
 }
