@@ -8,7 +8,7 @@ type RegExp interface {
 }
 
 type regexp struct {
-	*fsa.DFA
+	fsa.FSA
 }
 
 func (r *regexp) Match(s string) bool {
