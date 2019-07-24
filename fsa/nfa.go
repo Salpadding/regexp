@@ -98,7 +98,8 @@ func newNonLetter() *NFA {
 	return res
 }
 
-func (n *NFA) Reset() RegExp {
+func (n *NFA) Reset() FSA {
 	n.currentStates = newStateSet(0)
+	n.rejected = false
 	return n
 }

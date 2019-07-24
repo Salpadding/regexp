@@ -1,8 +1,8 @@
 package fsa
 
-type RegExp interface {
-	Input(...rune) RegExp
-	InputString(string) RegExp
+type FSA interface {
+	Input(...rune) FSA
+	InputString(string) FSA
 	IsAccept() bool
-	Reset() RegExp
+	Reset() FSA
 }

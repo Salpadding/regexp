@@ -1,8 +1,7 @@
 package fsa
 
 import (
-	"bufio"
-	"io"
+	"fmt"
 )
 
 type code int
@@ -34,20 +33,19 @@ const (
 	dot              = '.'
 	plus             = '+'
 	question         = '?'
+	tab              = '\t'
 )
 
 type token struct {
-	code       code
-	value      rune
-	leftChild  *token
-	rightChild *token
+	code  code
+	value rune
 }
 
 var cache = map[rune]*token{
-	or:               {code: tokenOr, value: '|'},
-	closure:          {code: tokenClosure, value: '*'},
-	leftParentheses:  {code: tokenLeftParentheses, value: '('},
-	rightParentheses: {code: tokenRightParentheses, value: ')'},
+	or:               {code: tokenOr},
+	closure:          {code: tokenClosure},
+	leftParentheses:  {code: tokenLeftParentheses},
+	rightParentheses: {code: tokenRightParentheses},
 	dot:              {code: tokenWildcard},
 	plus:             {code: tokenOneOrMore},
 	question:         {code: tokenNoneOrOne},
@@ -65,57 +63,33 @@ var escapes = map[rune]*token{
 }
 
 var concat = &token{
-	code:  tokenConcat,
-	value: '+',
+	code: tokenConcat,
 }
 
 // TODO: keep parentheses closed always
-func tokenize(reader io.Reader) []*token {
-	var pretokenized []*token
-	runeReader := bufio.NewReader(reader)
-	for r, _, err := runeReader.ReadRune(); err == nil; r, _, err = runeReader.ReadRune() {
+func tokenize(program string) ([]*token, error) {
+	var res []*token
+	runes := []rune(program)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
 		switch r {
-		case whiteSpace, '\t':
+		case whiteSpace, tab:
 			continue
 		case escape:
-			// TODO: \s \w \d \n ...
-			r, _, err = runeReader.ReadRune()
-			if err != nil {
-				panic("unexpected eof")
+			if i+1 >= len(runes) {
+				return nil, fmt.Errorf("unexpected eof after %s", string(runes[:i]))
 			}
-			esc, ok := escapes[r]
+			esc, ok := escapes[runes[i+1]]
 			if !ok {
-				esc = &token{code: tokenChar, value: r}
+				esc = &token{code: tokenChar, value: runes[i+1]}
 			}
-			pretokenized = append(pretokenized, esc)
+			res = append(res, esc)
+			i++
 		case leftParentheses, rightParentheses, or, closure, dot, plus, question:
-			pretokenized = append(pretokenized, cache[r])
-		case '[':
+			res = append(res, cache[r])
 		default:
-			pretokenized = append(pretokenized, &token{code: tokenChar, value: r})
+			res = append(res, &token{code: tokenChar, value: r})
 		}
 	}
-	// insert concat token between
-	var res []*token
-	for i, token := range pretokenized {
-		res = append(res, token)
-		if i+1 == len(pretokenized) {
-			break
-		}
-		next := pretokenized[i+1]
-		if token.code == tokenOr || next.code == tokenOr {
-			continue
-		}
-		if next.code == tokenClosure {
-			continue
-		}
-		if next.code == tokenRightParentheses {
-			continue
-		}
-		if token.code == tokenLeftParentheses {
-			continue
-		}
-		res = append(res, concat)
-	}
-	return res
+	return res, nil
 }

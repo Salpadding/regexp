@@ -1,113 +1,141 @@
 package fsa
 
-import (
-	"errors"
-)
+import "errors"
 
-type tokenStack struct {
-	data []*token
-	pc   int
+type node struct {
+	token      *token
+	children   []*node
+	leftChild  *node
+	rightChild *node
 }
 
-func (s *tokenStack) pop() (*token, error) {
-	t, err := s.peek()
-	if err != nil {
-		return nil, err
-	}
-	s.pc++
-	return t, nil
+func parse(tokens []*token) *node {
+	var pc int
+	n := parseMulti(tokens, &pc, nil)
+	addModifier(n)
+	return refactor(n)
 }
 
-func (s *tokenStack) push(tk *token) {
-	s.data = append(s.data, tk)
-}
-
-func (s *tokenStack) peek() (*token, error) {
-	if s.pc >= len(s.data) {
-		return nil, errors.New("eof")
-	}
-	t := s.data[s.pc]
-	return t, nil
-}
-
-func (s *tokenStack) shift(idx int) {
-	s.pc += idx
-}
-
-func newStack(data []*token) *tokenStack {
-	if data == nil {
-		data = make([]*token, 0)
-	}
-	return &tokenStack{
-		data: data,
-		pc:   0,
-	}
-}
-
-func traverse(tree *token, cb func(*token)) {
-	if tree == nil {
-		return
-	}
-	cb(tree)
-	if tree.leftChild != nil {
-		traverse(tree.leftChild, cb)
-	}
-	if tree.rightChild != nil {
-		traverse(tree.rightChild, cb)
-	}
-}
-
-func (tree *token) stack() *tokenStack {
-	var tks []*token
-	traverse(tree, func(tk *token) {
-		tks = append([]*token{tk}, tks...)
-	})
-	return newStack(tks)
-}
-
-func buildAST(s *tokenStack, left *token) *token {
-	l := left
-	var r *token
-	for tk, err := s.pop(); err == nil; tk, err = s.pop() {
-		switch tk.code {
-		case tokenLeftParentheses:
-			l = buildAST(s, nil)
-		case tokenRightParentheses:
-			return l
-		case tokenClosure, tokenNoneOrOne, tokenOneOrMore:
-			tk2, err := s.pop()
-			ntk := &token{
-				code:      tk.code,
-				leftChild: l,
-			}
-			if err == nil && tk2.code == tokenConcat {
-				s.shift(-1)
-				return buildAST(s, ntk)
-			}
-			return ntk
-		case tokenConcat:
-			r = buildAST(s, nil)
-			if r == nil {
-				return l
-			}
-			return &token{
-				code:       tokenConcat,
-				leftChild:  l,
-				rightChild: r,
-			}
-		case tokenOr:
-			r = buildAST(s, nil)
-			if r == nil {
-				return l
-			}
-			return &token{
-				code:       tokenOr,
-				leftChild:  l,
-				rightChild: r,
-			}
-		default:
-			l = tk
+// parse tokens as multi-fork tree
+func parseMulti(tokens []*token, pc *int, left *node) *node {
+	if left == nil {
+		left = &node{
+			token:    concat,
+			children: []*node{},
 		}
 	}
-	return l
+
+	for *pc < len(tokens) {
+		tk := tokens[*pc]
+		*pc ++
+		switch tk.code {
+		case tokenLeftParentheses:
+			left.children = append(left.children, parseMulti(tokens, pc, nil))
+		case tokenRightParentheses:
+			return left
+		case tokenOr:
+			tmp := &node{
+				token:    tk,
+				children: []*node{left},
+			}
+			tmp.children = append(tmp.children, parseMulti(tokens, pc, nil))
+			return tmp
+		default:
+			left.children = append(left.children, &node{
+				token: tk,
+			})
+		}
+	}
+	return left
+}
+
+// add precedence *, ?, +
+func addModifier(tree *node) {
+	if tree.children == nil {
+		return
+	}
+	var tmp []*node
+	for i := 0; i < len(tree.children); i++ {
+		if i+1 == len(tree.children) {
+			tmp = append(tmp, tree.children[i])
+			break
+		}
+		switch tree.children[i+1].token.code {
+		case tokenClosure, tokenOneOrMore, tokenNoneOrOne:
+			tmp = append(tmp, &node{
+				token:     tree.children[i+1].token,
+				leftChild: tree.children[i],
+			})
+			i++
+		default:
+			tmp = append(tmp, tree.children[i])
+		}
+
+	}
+	tree.children = tmp
+	for _, n := range tree.children {
+		addModifier(n)
+	}
+}
+
+// convert multi-fork tree to binary tree
+func refactor(tree *node) *node {
+	switch tree.token.code {
+	case tokenOr:
+		return &node{
+			token:      tree.token,
+			leftChild:  refactor(tree.children[0]),
+			rightChild: refactor(tree.children[1]),
+		}
+	case tokenConcat:
+		if tree.children == nil || len(tree.children) == 0 {
+			return tree
+		}
+		if len(tree.children) == 1 {
+			return refactor(tree.children[0])
+		}
+		return &node{
+			token:     concat,
+			leftChild: refactor(tree.children[0]),
+			rightChild: refactor(&node{
+				token:    concat,
+				children: tree.children[1:],
+			}),
+		}
+	case tokenClosure, tokenOneOrMore, tokenNoneOrOne:
+		tree.leftChild = refactor(tree.leftChild)
+		return tree
+	default:
+		return tree
+	}
+}
+
+func validateTree(node *node) (bool, error) {
+	err := errors.New("invalid input regexp")
+	if node == nil || node.children != nil {
+		return false, err
+	}
+	switch node.token.code {
+	case tokenConcat, tokenOr:
+		if node.leftChild == nil || node.rightChild == nil {
+			return false, err
+		}
+		ok, _ := validateTree(node.leftChild)
+		if !ok {
+			return ok, err
+		}
+		ok, _ = validateTree(node.rightChild)
+		if !ok {
+			return ok, err
+		}
+	case tokenClosure, tokenOneOrMore, tokenNoneOrOne:
+		if node.leftChild == nil || node.rightChild != nil {
+			return false, err
+		}
+		ok, _ := validateTree(node.leftChild)
+		if !ok {
+			return ok, err
+		}
+	}
+	return true, nil
 }

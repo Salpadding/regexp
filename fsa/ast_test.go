@@ -1,7 +1,6 @@
 package fsa
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
@@ -9,59 +8,45 @@ import (
 )
 
 func TestBuildAST(t *testing.T) {
-	res := tokenize(bytes.NewBufferString("( a | b ) * cd"))
-	tree := buildAST(&tokenStack{
-		data: res,
-		pc:   0,
-	}, nil)
+	res, err := tokenize("( a | b ) * cd")
+	assert.NoError(t, err)
+	tree := parse(res)
 	assert.NotNil(t, tree)
-	assert.Equal(t, tokenConcat, tree.code)
-	assert.Equal(t, tokenClosure, tree.leftChild.code)
-	assert.Equal(t, tokenOr, tree.leftChild.leftChild.code)
-	assert.Nil(t, tree.leftChild.rightChild)
-	assert.Equal(t, tokenConcat, tree.rightChild.code)
-	assert.Equal(t, 'c', tree.rightChild.leftChild.value)
 }
 
 func TestBuildAST2(t *testing.T) {
-	res := tokenize(bytes.NewBufferString("()"))
-	tree := buildAST(&tokenStack{
-		data: res,
-		pc:   0,
-	}, nil)
-	assert.Nil(t, tree)
+	res, err := tokenize("()")
+	assert.NoError(t, err)
+	tree := parse(res)
+	assert.NotNil(t, tree)
 }
 
 // TestBuildAST3 covers boundary conditions
 func TestBuildAST3(t *testing.T) {
-	res := tokenize(bytes.NewBufferString("(a|b|c|d) | e ( h* (i| j) k)"))
-	tree := buildAST(&tokenStack{
-		data: res,
-		pc:   0,
-	}, nil)
+	res, err := tokenize("(a|b|c|d) | e ( h* (i| j) k)")
+	assert.NoError(t, err)
+	tree := parse(res)
 	assert.NotNil(t, tree)
-	assert.Equal(t, tokenOr, tree.code)
-	assert.Equal(t, tokenClosure, tree.rightChild.rightChild.leftChild.code)
-	assert.Equal(t, 'k', tree.rightChild.rightChild.rightChild.rightChild.value)
-	assert.Equal(t, 'a', tree.leftChild.leftChild.value)
 }
 
 func TestBuildAST4(t *testing.T) {
-	res := tokenize(bytes.NewBufferString("a*"))
-	tree := buildAST(&tokenStack{
-		data: res,
-		pc:   0,
-	}, nil)
+	res, err := tokenize("a*")
+	assert.NoError(t, err)
+	tree := parse(res)
 	assert.NotNil(t, tree)
-	assert.Equal(t, tokenClosure, tree.code)
 }
 
-
 func TestBuildAST5(t *testing.T) {
-	res := tokenize(bytes.NewBufferString("ab|cd"))
-	buildAST(&tokenStack{
-		data: res,
-		pc:   0,
-	}, nil)
+	res, err := tokenize("ab|cd")
+	assert.NoError(t, err)
+	parse(res)
+	fmt.Println("===========")
+}
+
+func TestBuildAST6(t *testing.T) {
+	res, err := tokenize(`(".*")|('.*')`)
+	assert.NoError(t, err)
+	tree := parse(res)
+	assert.NotNil(t, tree)
 	fmt.Println("===========")
 }

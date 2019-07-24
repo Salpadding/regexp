@@ -113,7 +113,7 @@ func (d *DFA) ToNFA() *NFA {
 	return nfa
 }
 
-func (d *DFA) Input(rs ...rune) RegExp {
+func (d *DFA) Input(rs ...rune) FSA {
 	if d.rejected {
 		return d
 	}
@@ -133,7 +133,7 @@ func (d *DFA) Input(rs ...rune) RegExp {
 	return d
 }
 
-func (d *DFA) InputString(s string) RegExp {
+func (d *DFA) InputString(s string) FSA {
 	d.Input([]rune(s)...)
 	return d
 }
@@ -142,7 +142,8 @@ func (d *DFA) IsAccept() bool {
 	return !d.rejected && d.finalStates.has(d.currentState)
 }
 
-func (d *DFA) Reset() RegExp {
+func (d *DFA) Reset() FSA {
 	d.currentState = 0
+	d.rejected = false
 	return d
 }

@@ -1,40 +1,42 @@
 package fsa
 
-import (
-	"bytes"
-	"fmt"
-)
-
-func New(regexp string) *NFA {
-	res := tokenize(bytes.NewBufferString(regexp))
-	tree := buildAST(&tokenStack{
-		data: res,
-		pc:   0,
-	}, nil)
-	return eval(tree)
+func New(regexp string) (*NFA, error) {
+	tokens, err := tokenize(regexp)
+	if err != nil {
+		return nil, err
+	}
+	node := parse(tokens)
+	ok, err := validateTree(node)
+	if !ok {
+		return nil, err
+	}
+	return eval(node), nil
 }
 
-func eval(tree *token) *NFA {
-	switch tree.code {
-	case tokenChar:
-		return NewChar(tree.value)
-	case tokenWildcard:
-		return newWildCard()
-	case tokenDigital:
-		return newDigital()
-	case tokenLetters:
-		return newLetters()
-	case tokenOneOrMore:
-		return eval(tree.leftChild).oneOrMore()
-	case tokenNoneOrOne:
-		return eval(tree.leftChild).noneOrOne()
+func eval(tree *node) *NFA {
+	switch tree.token.code {
 	case tokenConcat:
 		return eval(tree.leftChild).concat(eval(tree.rightChild))
 	case tokenOr:
 		return eval(tree.leftChild).or(eval(tree.rightChild))
 	case tokenClosure:
 		return eval(tree.leftChild).kleen()
-	default:
-		panic(fmt.Sprintf("unexpected token type %d", tree.code))
+	case tokenNoneOrOne:
+		return eval(tree.leftChild).noneOrOne()
+	case tokenOneOrMore:
+		return eval(tree.leftChild).oneOrMore()
+	case tokenChar:
+		return NewChar(tree.token.value)
+	case tokenDigital:
+		return newDigital()
+	case tokenLetters:
+		return newLetters()
+	case tokenWildcard:
+		return newWildCard()
+	case tokenNonDigital:
+		return newNonDigital()
+	case tokenNonLetter:
+		return newNonLetter()
 	}
+	return nil
 }

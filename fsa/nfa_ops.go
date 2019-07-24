@@ -24,14 +24,14 @@ func (n *NFA) input(r rune) *NFA {
 	return n
 }
 
-func (n *NFA) Input(rs ...rune) RegExp {
+func (n *NFA) Input(rs ...rune) FSA {
 	for _, r := range rs {
 		n.input(r)
 	}
 	return n
 }
 
-func (n *NFA) InputString(s string) RegExp {
+func (n *NFA) InputString(s string) FSA {
 	for _, r := range s {
 		n.Input(r)
 	}
