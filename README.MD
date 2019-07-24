@@ -14,11 +14,13 @@ import (
 )
 
 func main() {
-	reg := re.Compile("( a | b ) * cd")
-	reg.InputString("aaaaaabbbbbbbaaaaabbbcd")
-	fmt.Println(reg.IsAccept())
-	reg.InputString("----")
-	fmt.Println(reg.IsAccept())
+	re, err := re.Compile(`[a-z0-9A-Z]+@[a-z0-9A-Z]+\.[a-z0-9A-Z]+`)
+	assert.NoError(t, err)
+	re.InputString("m6567fc@outlook.com")
+	assert.True(t, re.IsAccept())
+	re.Reset()
+	re.InputString("abbbbb@yyy")
+	assert.False(t, re.IsAccept())
 }
 
 ```

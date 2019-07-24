@@ -103,7 +103,6 @@ func tokenize(program string) ([]*token, error) {
 					return nil, fmt.Errorf("unexpected eof after %s", string(runes[:i]))
 				}
 				if runes[i] == ']' {
-					i++
 					break
 				}
 				buf.WriteRune(runes[i])
