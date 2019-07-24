@@ -60,7 +60,7 @@ func addModifier(tree *node) error {
 		tmp []*node
 		err error
 	)
-	for _, n := range tree.children {
+		for _, n := range tree.children {
 		switch n.token.code {
 		// *, +, ?
 		case tokenClosure, tokenOneOrMore, tokenNoneOrOne:

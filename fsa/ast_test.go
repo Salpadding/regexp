@@ -39,7 +39,8 @@ func TestBuildAST4(t *testing.T) {
 func TestBuildAST5(t *testing.T) {
 	res, err := tokenize("ab|cd")
 	assert.NoError(t, err)
-	parse(res)
+	_, err = parse(res)
+	assert.NoError(t, err)
 	fmt.Println("===========")
 }
 

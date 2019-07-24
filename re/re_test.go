@@ -39,10 +39,19 @@ func TestMatchHex(t *testing.T) {
 	assert.False(t, re.Match("0xg"))
 }
 
-func TestMatchKeyword(t *testing.T){
+func TestMatchKeyword(t *testing.T) {
 	re, err := Compile(`break|default|func|interface|select|case|defer|go|map|struct|chan|else|goto|package|switch|const|fallthrough|if|range|type|continue|for|import|return|var`)
 	assert.NoError(t, err)
 	assert.True(t, re.Match("break"))
 	assert.True(t, re.Match("default"))
 	assert.True(t, re.Match("func"))
+}
+
+func TestWisdomURL(t *testing.T) {
+	re, err := Compile(`wisdom://([0-9a-f]+@)?((\d+\.\d+\.\d+\.\d+)|[0-9a-zA-Z]+)(:[0-9]+)?`)
+	assert.NoError(t, err)
+	assert.True(t, re.Match("wisdom://76a3f5787062ffd12425b27e14f29348a7407b42ebfdff8e14543e6356e10530@192.168.0.104:9005"))
+	assert.True(t, re.Match("wisdom://192.168.0.104:9005"))
+	assert.True(t, re.Match("wisdom://localhost"))
+	assert.False(t, re.Match("wisdom://76a3f5787062ffd12425b27e14f29348a7407b42ebfdff8e14543e6356e10530@192.168.0:9005"))
 }
