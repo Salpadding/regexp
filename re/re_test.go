@@ -32,6 +32,13 @@ func TestMatchFloat(t *testing.T) {
 	assert.False(t, re.Match("NaN"))
 }
 
+func TestMatchHex(t *testing.T) {
+	re, err := Compile(`0x[a-f0-9]+`)
+	assert.NoError(t, err)
+	assert.True(t, re.Match("0xff"))
+	assert.False(t, re.Match("0xg"))
+}
+
 func TestMatchKeyword(t *testing.T){
 	re, err := Compile(`break|default|func|interface|select|case|defer|go|map|struct|chan|else|goto|package|switch|const|fallthrough|if|range|type|continue|for|import|return|var`)
 	assert.NoError(t, err)
