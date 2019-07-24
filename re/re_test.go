@@ -29,4 +29,13 @@ func TestMatchFloat(t *testing.T) {
 	re, err := Compile(`-?[0-9]+(\.[0-9]+)?`)
 	assert.NoError(t, err)
 	assert.True(t, re.Match("0.09"))
+	assert.False(t, re.Match("NaN"))
+}
+
+func TestMatchKeyword(t *testing.T){
+	re, err := Compile(`break|default|func|interface|select|case|defer|go|map|struct|chan|else|goto|package|switch|const|fallthrough|if|range|type|continue|for|import|return|var`)
+	assert.NoError(t, err)
+	assert.True(t, re.Match("break"))
+	assert.True(t, re.Match("default"))
+	assert.True(t, re.Match("func"))
 }
