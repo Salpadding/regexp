@@ -2,12 +2,27 @@ package re
 
 import "github.com/Salpadding/regexp/fsa"
 
-type RegExp fsa.FSA
+type RegExp interface {
+	fsa.FSA
+	Match(string) bool
+}
+
+type regexp struct {
+	*fsa.DFA
+}
+
+func (r *regexp) Match(s string) bool {
+	r.Reset()
+	r.InputString(s)
+	return r.IsAccept()
+}
 
 func Compile(re string) (RegExp, error) {
 	nfa, err := fsa.New(re)
 	if err != nil {
 		return nil, err
 	}
-	return nfa.ToDFA(), nil
+	return &regexp{
+		nfa.ToDFA(),
+	}, nil
 }

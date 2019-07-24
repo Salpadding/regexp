@@ -7,9 +7,6 @@ import (
 
 func main() {
 	r, _ := re.Compile(`[a-z0-9A-Z]+@[a-z0-9A-Z]+\.[a-z0-9A-Z]+`)
-	r.InputString("m6567fc@outlook.com")
-	fmt.Println(r.IsAccept())
-	r.Reset()
-	r.InputString("abbbbb@yyy")
-	fmt.Println(r.IsAccept())
+	fmt.Println(r.Match("m6567fc@outlook.com"))
+	fmt.Println(r.Match("abbbbb@yyy"))
 }
