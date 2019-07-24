@@ -147,3 +147,55 @@ func (d *DFA) Reset() FSA {
 	d.rejected = false
 	return d
 }
+
+// hopcroft dfa minimize
+func (d *DFA) minimize() []stateSet {
+	initial := []stateSet{newStateSet()}
+	for i := 0; i <= int(d.maximumState); i++ {
+		initial[0].add(state(i))
+	}
+	for _, f := range d.finalStates.elements() {
+		initial[0].remove(f)
+	}
+
+	for alpha := range d.transitions {
+		initial = d.div(initial, alpha)
+	}
+
+	for _, set := range initial {
+		if set.size() < 1 {
+			continue
+		}
+	}
+}
+
+func (d *DFA) div(sts []stateSet, alpha rune) []stateSet {
+	var res []stateSet
+	for _, set := range sts {
+		tb := make(map[state]stateSet)
+		for _, s := range set.elements() {
+			addState := func(k, v state) {
+				_, ok := tb[k]
+				if !ok {
+					tb[k] = newStateSet(v)
+					return
+				}
+				tb[k].add(v)
+			}
+			r, ok := d.transitions[alpha][s]
+			if !ok {
+				addState(-1, s)
+				continue
+			}
+			addState(r, s)
+		}
+
+		for _, v := range tb {
+			if v.size() == 0 {
+				continue
+			}
+			res = append(res, v)
+		}
+	}
+	return res
+}
