@@ -84,7 +84,10 @@ func newRange(start, end rune) *NFA {
 
 func newNonDigital() *NFA {
 	res := newEmpty()
-	for r := rune(0); r < 0x7f && !('0' <= r && r <= '9'); r++ {
+	for r := rune(0); r < 0x7f; r++ {
+		if '0' <= r && r <= '9' {
+			continue
+		}
 		res.addTransition(r, 0, 1)
 	}
 	return res
@@ -92,7 +95,10 @@ func newNonDigital() *NFA {
 
 func newNonLetter() *NFA {
 	res := newEmpty()
-	for r := rune(0); r < 0x7f && !('a' <= r && r <= 'z') && !('A' <= r && r <= 'Z'); r++ {
+	for r := rune(0); r < 0x7f; r++ {
+		if ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z') {
+			continue
+		}
 		res.addTransition(r, 0, 1)
 	}
 	return res

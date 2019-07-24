@@ -2,6 +2,8 @@
 
 a regular expression engine based on non-deterministic finite automata.
 
+only supports ascii character 
+
 ```go
 package main
 

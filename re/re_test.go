@@ -14,3 +14,13 @@ func TestMatchEmail(t *testing.T) {
 	re.InputString("abbbbb@yyy")
 	assert.False(t, re.IsAccept())
 }
+
+func TestMatchEmail2(t *testing.T) {
+	re, err := Compile(`[a-z0-9A-Z]+@[a-z0-9A-Z]+\.[a-z0-9A-Z]+`)
+	assert.NoError(t, err)
+	re.InputString("m6567fc@outlook.com")
+	assert.True(t, re.IsAccept())
+	re.Reset()
+	re.InputString("abbbbb@yyy")
+	assert.False(t, re.IsAccept())
+}

@@ -1,6 +1,8 @@
 package fsa
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 )
 
@@ -37,8 +39,9 @@ const (
 )
 
 type token struct {
-	code  code
-	value rune
+	code   code
+	value  rune
+	ranges map[rune]rune //
 }
 
 var cache = map[rune]*token{
@@ -66,6 +69,11 @@ var concat = &token{
 	code: tokenConcat,
 }
 
+// the range must match ((.-.)|.)+
+var rangeMatcher = newWildCard().concat(
+	NewChar('-')).concat(newWildCard(),
+).or(newWildCard()).oneOrMore().ToDFA()
+
 // TODO: keep parentheses closed always
 func tokenize(program string) ([]*token, error) {
 	var res []*token
@@ -87,9 +95,55 @@ func tokenize(program string) ([]*token, error) {
 			i++
 		case leftParentheses, rightParentheses, or, closure, dot, plus, question:
 			res = append(res, cache[r])
+		case '[':
+			buf := bytes.NewBuffer(nil)
+			i++
+			for {
+				if i >= len(runes) {
+					return nil, fmt.Errorf("unexpected eof after %s", string(runes[:i]))
+				}
+				if runes[i] == ']' {
+					i++
+					break
+				}
+				buf.WriteRune(runes[i])
+				i++
+			}
+			t, err := readRange(buf.String())
+			if err != nil {
+				return nil, err
+			}
+			res = append(res, t)
 		default:
 			res = append(res, &token{code: tokenChar, value: r})
 		}
 	}
 	return res, nil
+}
+
+func readRange(buf string) (*token, error) {
+	rangeMatcher.Reset()
+	rangeMatcher.InputString(buf)
+	ranges := map[rune]rune{}
+	if !rangeMatcher.IsAccept() {
+		return nil, errors.New("invalid range " + buf)
+	}
+	runes := []rune(buf)
+	for i := 0; i < len(runes); {
+		if i+1 == len(runes) {
+			ranges[runes[i]] = epsilon
+			break
+		}
+		if runes[i+1] == '-' {
+			ranges[runes[i]] = runes[i+2]
+			i += 3
+			continue
+		}
+		ranges[runes[i]] = epsilon
+		i++
+	}
+	return &token{
+		code:   tokenRange,
+		ranges: ranges,
+	}, nil
 }

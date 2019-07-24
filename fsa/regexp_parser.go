@@ -37,6 +37,18 @@ func eval(tree *node) *NFA {
 		return newNonDigital()
 	case tokenNonLetter:
 		return newNonLetter()
+	case tokenRange:
+		n := newEmpty()
+		for k, v := range tree.token.ranges {
+			if v == epsilon {
+				n.addTransition(k, 0, 1)
+				continue
+			}
+			for r := k; r <= v; r++ {
+				n.addTransition(r, 0, 1)
+			}
+		}
+		return n
 	}
 	return nil
 }
