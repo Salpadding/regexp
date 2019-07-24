@@ -5,7 +5,10 @@ func New(regexp string) (*NFA, error) {
 	if err != nil {
 		return nil, err
 	}
-	node := parse(tokens)
+	node, err := parse(tokens)
+	if err != nil{
+		return nil, err
+	}
 	ok, err := validateTree(node)
 	if !ok {
 		return nil, err

@@ -9,11 +9,13 @@ type node struct {
 	rightChild *node
 }
 
-func parse(tokens []*token) *node {
+func parse(tokens []*token) (*node, error) {
 	var pc int
 	n := parseMulti(tokens, &pc, nil)
-	addModifier(n)
-	return refactor(n)
+	if err := addModifier(n); err != nil {
+		return nil, err
+	}
+	return refactor(n), nil
 }
 
 // parse tokens as multi-fork tree
@@ -50,32 +52,37 @@ func parseMulti(tokens []*token, pc *int, left *node) *node {
 }
 
 // add precedence *, ?, +
-func addModifier(tree *node) {
+func addModifier(tree *node) error {
 	if tree.children == nil {
-		return
+		return nil
 	}
-	var tmp []*node
-	for i := 0; i < len(tree.children); i++ {
-		if i+1 == len(tree.children) {
-			tmp = append(tmp, tree.children[i])
-			break
-		}
-		switch tree.children[i+1].token.code {
+	var (
+		tmp []*node
+		err error
+	)
+	for _, n := range tree.children {
+		switch n.token.code {
+		// *, +, ?
 		case tokenClosure, tokenOneOrMore, tokenNoneOrOne:
-			tmp = append(tmp, &node{
-				token:     tree.children[i+1].token,
-				leftChild: tree.children[i],
-			})
-			i++
+			if tmp == nil || len(tmp) < 1 {
+				return errors.New("unexpected modifier")
+			}
+			l := len(tmp)
+			tmp[l-1] = &node{
+				token:     n.token,
+				leftChild: tmp[l-1],
+			}
 		default:
-			tmp = append(tmp, tree.children[i])
+			err = addModifier(n)
+			if err != nil {
+				return err
+			}
+			tmp = append(tmp, n)
 		}
 
 	}
 	tree.children = tmp
-	for _, n := range tree.children {
-		addModifier(n)
-	}
+	return nil
 }
 
 // convert multi-fork tree to binary tree

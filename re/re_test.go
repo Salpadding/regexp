@@ -24,3 +24,9 @@ func TestMatchEmail2(t *testing.T) {
 	re.InputString("abbbbb@yyy")
 	assert.False(t, re.IsAccept())
 }
+
+func TestMatchFloat(t *testing.T) {
+	re, err := Compile(`-?[0-9]+(\.[0-9]+)?`)
+	assert.NoError(t, err)
+	assert.True(t, re.Match("0.09"))
+}

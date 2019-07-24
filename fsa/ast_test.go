@@ -10,14 +10,14 @@ import (
 func TestBuildAST(t *testing.T) {
 	res, err := tokenize("( a | b ) * cd")
 	assert.NoError(t, err)
-	tree := parse(res)
+	tree, _ := parse(res)
 	assert.NotNil(t, tree)
 }
 
 func TestBuildAST2(t *testing.T) {
 	res, err := tokenize("()")
 	assert.NoError(t, err)
-	tree := parse(res)
+	tree, _ := parse(res)
 	assert.NotNil(t, tree)
 }
 
@@ -25,14 +25,14 @@ func TestBuildAST2(t *testing.T) {
 func TestBuildAST3(t *testing.T) {
 	res, err := tokenize("(a|b|c|d) | e ( h* (i| j) k)")
 	assert.NoError(t, err)
-	tree := parse(res)
+	tree, _ := parse(res)
 	assert.NotNil(t, tree)
 }
 
 func TestBuildAST4(t *testing.T) {
 	res, err := tokenize("a*")
 	assert.NoError(t, err)
-	tree := parse(res)
+	tree, _ := parse(res)
 	assert.NotNil(t, tree)
 }
 
@@ -46,7 +46,7 @@ func TestBuildAST5(t *testing.T) {
 func TestBuildAST6(t *testing.T) {
 	res, err := tokenize(`(".*")|('.*')`)
 	assert.NoError(t, err)
-	tree := parse(res)
+	tree, _ := parse(res)
 	assert.NotNil(t, tree)
 	fmt.Println("===========")
 }
