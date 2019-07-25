@@ -109,8 +109,16 @@ func TestRefine(t *testing.T) {
 	fmt.Println("====")
 }
 
-func TestMinimize(t *testing.T) {
+func TestMinimize1(t *testing.T) {
 	nfa, err := New(`wisdom://([0-9a-f]+@)?((\d+\.\d+\.\d+\.\d+)|[0-9a-zA-Z]+)(:[0-9]+)?`)
+	assert.NoError(t, err)
+	dfa1 := nfa.ToDFA()
+	dfa2 := dfa1.Minimize()
+	assert.True(t, dfa2.maximumState < dfa1.maximumState)
+}
+
+func TestMinimize2(t *testing.T) {
+	nfa, err := New(`-?[0-9]+(\.[0-9]+)?`)
 	assert.NoError(t, err)
 	dfa1 := nfa.ToDFA()
 	dfa2 := dfa1.Minimize()
