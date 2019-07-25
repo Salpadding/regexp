@@ -96,7 +96,7 @@ func newNonDigital() *NFA {
 func newNonLetter() *NFA {
 	res := newEmpty()
 	for r := rune(0); r < 0x7f; r++ {
-		if ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z') {
+		if 'a' <= r && r <= 'z' || 'A' <= r && r <= 'Z' {
 			continue
 		}
 		res.addTransition(r, 0, 1)
