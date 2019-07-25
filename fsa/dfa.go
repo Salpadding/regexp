@@ -148,6 +148,32 @@ func (d *DFA) Reset() FSA {
 	return d
 }
 
+func (d *DFA) closure(set stateSet) stateSet {
+	res := set.copy()
+
+	fn := func() {
+		for _, s := range res.elements() {
+			for alpha := range d.transitions {
+				s1, ok := d.transitions[alpha][s]
+				if ok {
+					res.add(s1)
+				}
+			}
+		}
+	}
+
+	size0 := res.size()
+	for {
+		fn()
+		size1 := res.size()
+		if size1 == size0 {
+			break
+		}
+		size0 = size1
+	}
+	return res
+}
+
 // hopcroft dfa Minimize
 func (d *DFA) Minimize() *DFA {
 	sts := d.refineAll()
@@ -159,6 +185,14 @@ func (d *DFA) Minimize() *DFA {
 			break
 		}
 	}
+	// filter dead state
+	var tmp []stateSet
+	for _, set := range sts {
+		if d.closure(set).intersection(d.finalStates).size() != 0 {
+			tmp = append(tmp, set)
+		}
+	}
+	sts = tmp
 	res := &DFA{
 		transitions:  map[rune]map[state]state{},
 		maximumState: state(len(sts) - 1),
@@ -195,7 +229,11 @@ func (d *DFA) Minimize() *DFA {
 			if !ok {
 				continue
 			}
-			addTransition(alpha, state(i), state(indexOf(s2)))
+			to := indexOf(s2)
+			if to < 0 {
+				continue
+			}
+			addTransition(alpha, state(i), state(to))
 		}
 	}
 	return res

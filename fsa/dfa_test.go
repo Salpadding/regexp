@@ -124,3 +124,11 @@ func TestMinimize2(t *testing.T) {
 	dfa2 := dfa1.Minimize()
 	assert.True(t, dfa2.maximumState < dfa1.maximumState)
 }
+
+func TestMinimize3(t *testing.T) {
+	nfa, err := New(`break|default|func|interface|select|case|defer|go|map|struct|chan|else|goto|package|switch|const|fallthrough|if|range|type|continue|for|import|return|var`)
+	assert.NoError(t, err)
+	dfa1 := nfa.ToDFA()
+	dfa2 := dfa1.Minimize()
+	assert.True(t, dfa2.maximumState < dfa1.maximumState)
+}
