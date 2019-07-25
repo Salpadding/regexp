@@ -148,52 +148,121 @@ func (d *DFA) Reset() FSA {
 	return d
 }
 
-// hopcroft dfa minimize
-func (d *DFA) minimize() []stateSet {
-	initial := []stateSet{newStateSet()}
-	for i := 0; i <= int(d.maximumState); i++ {
-		initial[0].add(state(i))
+// hopcroft dfa Minimize
+func (d *DFA) Minimize() *DFA {
+	sts := d.refineAll()
+	for i := 1; i < len(sts); i++ {
+		if sts[i].has(0) {
+			tmp := sts[i]
+			sts[i] = sts[0]
+			sts[0] = tmp
+			break
+		}
 	}
-	for _, f := range d.finalStates.elements() {
-		initial[0].remove(f)
+	res := &DFA{
+		transitions:  map[rune]map[state]state{},
+		maximumState: state(len(sts) - 1),
+		finalStates:  newStateSet(),
 	}
 
-	for alpha := range d.transitions {
-		initial = d.div(initial, alpha)
+	indexOf := func(s state) int {
+		for i := range sts {
+			if sts[i].has(s) {
+				return i
+			}
+		}
+		return -1
 	}
 
-	for _, set := range initial {
-		if set.size() < 1 {
+	addTransition := func(alpha rune, from state, to state) {
+		_, ok := res.transitions[alpha]
+		if !ok {
+			res.transitions[alpha] = map[state]state{}
+		}
+		res.transitions[alpha][from] = to
+	}
+
+	for i := range sts {
+		s, ok := sts[i].one()
+		if !ok {
 			continue
 		}
+		if d.finalStates.has(s) {
+			res.finalStates.add(state(i))
+		}
+		for alpha := range d.transitions {
+			s2, ok := d.transitions[alpha][s]
+			if !ok {
+				continue
+			}
+			addTransition(alpha, state(i), state(indexOf(s2)))
+		}
 	}
+	return res
 }
 
-func (d *DFA) div(sts []stateSet, alpha rune) []stateSet {
+// hopcroft's algorithm partition refinement
+func (d *DFA) refineAll() []stateSet {
+	sts := newStateSet()
+	for i := state(0); i <= d.maximumState; i++ {
+		sts.add(i)
+	}
+	for _, s := range d.finalStates.elements() {
+		sts.remove(s)
+	}
+	initial := []stateSet{sts, d.finalStates}
+	size0 := len(initial)
+	for {
+		for alpha := range d.transitions {
+			initial = d.refineOneChar(initial, alpha)
+		}
+		size1 := len(initial)
+		if size1 == size0 {
+			break
+		}
+		size0 = size1
+	}
+	return initial
+}
+
+// hopcroft's algorithm partition refinement
+func (d *DFA) refineOneChar(sts []stateSet, alpha rune) []stateSet {
 	var res []stateSet
+	ts := d.transitions[alpha]
+	indexOf := func(s state) int {
+		for i := range sts {
+			if sts[i].has(s) {
+				return i
+			}
+		}
+		return -1
+	}
+
 	for _, set := range sts {
-		tb := make(map[state]stateSet)
+		m := make(map[state]stateSet)
 		for _, s := range set.elements() {
-			addState := func(k, v state) {
-				_, ok := tb[k]
-				if !ok {
-					tb[k] = newStateSet(v)
-					return
-				}
-				tb[k].add(v)
-			}
-			r, ok := d.transitions[alpha][s]
+			t, ok := ts[s]
 			if !ok {
-				addState(-1, s)
-				continue
+				t = -1
 			}
-			addState(r, s)
+			_, ok = m[t]
+			if !ok {
+				m[t] = newStateSet()
+			}
+			m[t].add(s)
 		}
 
-		for _, v := range tb {
-			if v.size() == 0 {
-				continue
+		m2 := make(map[int]stateSet)
+		for k, v := range m {
+			idx := indexOf(k)
+			_, ok := m2[idx]
+			if !ok {
+				m2[idx] = newStateSet()
 			}
+			m2[idx] = m2[idx].union(v)
+		}
+
+		for _, v := range m2 {
 			res = append(res, v)
 		}
 	}

@@ -1,6 +1,7 @@
 package fsa
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -94,3 +95,24 @@ func TestWildcard(t *testing.T) {
 	assert.False(t, n.IsAccept())
 }
 
+func TestRefine(t *testing.T) {
+	d := &DFA{
+		transitions: map[rune]map[state]state{
+			'a': {0: 1, 1: 1, 4: 0, 2: 1, 3: 3, 5: 5,},
+			'b': {1: 4, 0: 2, 2: 3, 3: 2, 4: 5, 5: 4,},
+		},
+		finalStates:  newStateSet(0, 1),
+		maximumState: 5,
+	}
+
+	d = d.Minimize()
+	fmt.Println("====")
+}
+
+func TestMinimize(t *testing.T) {
+	nfa, err := New(`wisdom://([0-9a-f]+@)?((\d+\.\d+\.\d+\.\d+)|[0-9a-zA-Z]+)(:[0-9]+)?`)
+	assert.NoError(t, err)
+	dfa1 := nfa.ToDFA()
+	dfa2 := dfa1.Minimize()
+	assert.True(t, dfa2.maximumState < dfa1.maximumState)
+}

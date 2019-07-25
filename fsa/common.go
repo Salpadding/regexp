@@ -26,6 +26,15 @@ func (set stateSet) remove(s state) stateSet {
 	return set
 }
 
+func (set stateSet) one() (state, bool) {
+	for s, ok := range set {
+		if ok {
+			return s, true
+		}
+	}
+	return -1, false
+}
+
 func (set stateSet) union(s2 stateSet) stateSet {
 	res := make(map[state]bool)
 	for s, ok := range set {
@@ -90,6 +99,20 @@ func (set stateSet) intersection(s2 stateSet) stateSet {
 		}
 		ok = s2.has(s)
 		if !ok {
+			continue
+		}
+		res[s] = true
+	}
+	return res
+}
+
+func (set stateSet) subtract(s2 stateSet) stateSet {
+	res := make(map[state]bool, 0)
+	for s, ok := range set {
+		if !ok {
+			continue
+		}
+		if s2.has(s) {
 			continue
 		}
 		res[s] = true

@@ -23,6 +23,6 @@ func Compile(re string) (RegExp, error) {
 		return nil, err
 	}
 	return &regexp{
-		nfa.ToDFA(),
+		nfa.ToDFA().Minimize(),
 	}, nil
 }
