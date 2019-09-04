@@ -14,11 +14,27 @@ var whiteSpaces = map[rune]bool{
 	'\t': true,
 }
 
+var escapes = map[rune]token.Token{
+	's':  token.Char(' '),
+	't':  token.Char('\t'),
+	'n':  token.Char('\n'),
+	'\\': token.Char('\\'),
+	'w':  token.Letters("[a-zA-Z]"),
+	'd':  token.Digital("[0-9]"),
+	'W':  token.NonDigital(`\W`),
+	'D':  token.NonDigital(`\D`),
+}
+
 var operators = map[rune]token.Token{
 	'|': token.Or('|'),
 	'(': token.LeftParenthesis('('),
 	')': token.RightParenthesis(')'),
 	'*': token.Asterisk('*'),
+	'+': token.Plus('+'),
+	'?': token.QuestionMark('?'),
+	'.': token.WildCard('.'),
+	'[': token.LeftBracket('['),
+	']': token.RightBracket(']'),
 }
 
 type Char interface {
@@ -90,17 +106,45 @@ func (l *Lexer) NextToken() (token.Token, error) {
 	case char:
 		r := rune(c)
 		switch r {
-		case '|', '*', '(', ')':
+		case '|', '*', '(', ')', '+', '?', '.':
 			l.nextRune()
 			return operators[r], nil
 		case '\\':
 			n, ok := l.next.(char)
-			if !ok{
+			if !ok {
 				return nil, errors.New("unexpected eof after slash")
+			}
+			tk, ok := escapes[rune(n)]
+			if ok {
+				l.nextRune()
+				l.nextRune()
+				return tk, nil
 			}
 			l.nextRune()
 			l.nextRune()
 			return token.Char(n), nil
+		case '[':
+			r := token.Range{}
+			for{
+				l.nextRune()
+				_, ok := l.current.(eof)
+				if ok{
+					return nil, errors.New("unexpected eof")
+				}
+				if l.current.rune() == ']'{
+					break
+				}
+				if l.next.rune() == '-'{
+					n := l.current.rune()
+					l.nextRune()
+					l.nextRune()
+					r[n] = l.current.rune()
+					continue
+				}
+				r[l.current.rune()] = l.current.rune()
+			}
+			l.nextRune()
+			return r, nil
 		default:
 			l.nextRune()
 			return token.Char(r), nil

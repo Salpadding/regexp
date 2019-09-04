@@ -2,15 +2,7 @@ package fsa
 
 import (
 	"errors"
-	"io"
 )
-
-
-type Lexer struct {
-	io.RuneReader
-	current rune
-	next    rune
-}
 
 type node struct {
 	token      *token

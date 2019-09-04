@@ -9,7 +9,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	l := New(bytes.NewBufferString("(a|b|c|d) | e ( h* (i| j) k)"))
+	l := New(bytes.NewBufferString(`(\d|\w)+@(\d|\w)+\.(\d|\w)+)`))
 	var tks []token.Token
 	for{
 		tk, err := l.NextToken()

@@ -25,3 +25,35 @@ type Closure struct {
 type Char string
 
 func (c Char) expression() {}
+
+type Digital string
+
+func (d Digital) expression() {}
+
+type NonDigital string
+
+func (n NonDigital) expression() {}
+
+type WildCard string
+
+func (w WildCard) expression() {}
+
+type OneOrMore struct {
+	Expression
+}
+
+type NoneOrOne struct {
+	Expression
+}
+
+type Letters string
+
+func (l Letters) expression() {}
+
+type NonLetters string
+
+func (n NonLetters) expression() {}
+
+type Range map[rune]rune
+
+func (r Range) expression() {}

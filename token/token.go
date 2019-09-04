@@ -45,3 +45,63 @@ type EOF string
 func (e EOF) token() {}
 
 func (e EOF) eof() {}
+
+type Plus string
+
+func (p Plus) token() {}
+
+func (p Plus) plus() {}
+
+type QuestionMark string
+
+func (q QuestionMark) token() {}
+
+func (q QuestionMark) questionMark() {}
+
+type WildCard string
+
+func (w WildCard) token() {}
+
+func (w WildCard) wildCard() {}
+
+type Letters string
+
+func (l Letters) token() {}
+
+func (l Letters) letters() {}
+
+type Digital string
+
+func (d Digital) token() {}
+
+func (d Digital) digital() {}
+
+type NonLetters string
+
+func (l NonLetters) token() {}
+
+func (l NonLetters) nonLetters() {}
+
+type NonDigital string
+
+func (d NonDigital) token() {}
+
+func (d NonDigital) nonDigital() {}
+
+type LeftBracket string
+
+func (l LeftBracket) token() {}
+
+func (l LeftBracket) leftBracket() {}
+
+type RightBracket string
+
+func (r RightBracket) token() {}
+
+func (r RightBracket) rightBracket() {}
+
+type Range map[rune]rune
+
+func (r Range) token() {}
+
+func (r Range) rng() {}

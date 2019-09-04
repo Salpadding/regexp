@@ -16,8 +16,28 @@ const (
 	lowest
 	or
 	and
-	closure
+	postfix
 )
+
+func (p *Parser) needConcat(t token.Token) bool {
+	switch t.(type) {
+	case token.NonDigital, token.Digital, token.Letters,
+		token.NonLetters, token.RightParenthesis, token.QuestionMark,
+		token.Plus, token.Asterisk, token.Char, token.Range:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *Parser) isInfix(t token.Token) bool {
+	switch t.(type) {
+	case token.Or, token.RightParenthesis, token.EOF, token.Plus, token.Asterisk, token.QuestionMark:
+		return true
+	default:
+		return false
+	}
+}
 
 type Parser struct {
 	*lex.Lexer
@@ -38,11 +58,8 @@ func (p *Parser) nextToken() (token.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, currentIsChar := p.current.(token.Char)
-	_, currentIsAsterisk := p.current.(token.Asterisk)
-	_, nextIsChar := next.(token.Char)
-	_, nextIsLeftParenthesis := next.(token.LeftParenthesis)
-	if (currentIsChar || currentIsAsterisk) && (nextIsChar || nextIsLeftParenthesis) {
+
+	if p.needConcat(p.current) && !p.isInfix(next) {
 		p.next = token.And("")
 		p.cache = append(p.cache, next)
 		return p.current, nil
@@ -69,8 +86,8 @@ func (p *Parser) precedence(tk token.Token) Precedence {
 	switch tk.(type) {
 	case token.And:
 		return and
-	case token.Asterisk:
-		return closure
+	case token.Asterisk, token.Plus, token.QuestionMark:
+		return postfix
 	case token.Or:
 		return or
 	default:
@@ -119,6 +136,16 @@ func (p *Parser) parseInfix(left ast.Expression, op token.Token) (ast.Expression
 			return nil, err
 		}
 		return &ast.Closure{Expression: left}, nil
+	case token.Plus:
+		if _, err := p.nextToken(); err != nil {
+			return nil, err
+		}
+		return &ast.OneOrMore{Expression: left}, nil
+	case token.QuestionMark:
+		if _, err := p.nextToken(); err != nil {
+			return nil, err
+		}
+		return &ast.NoneOrOne{Expression: left}, nil
 	case token.Or:
 		if _, err := p.nextToken(); err != nil {
 			return nil, err
@@ -138,18 +165,22 @@ func (p *Parser) parseInfix(left ast.Expression, op token.Token) (ast.Expression
 
 func (p *Parser) parsePrefix() (ast.Expression, error) {
 	current := p.current
+	_, err := p.nextToken()
+	if err != nil {
+		return nil, err
+	}
 	switch c := current.(type) {
 	case token.Char:
-		_, err := p.nextToken()
-		if err != nil {
-			return nil, err
-		}
 		return ast.Char(c), nil
+	case token.NonLetters:
+		return ast.NonLetters(c), nil
+	case token.Letters:
+		return ast.Letters(c), nil
+	case token.Digital:
+		return ast.Digital(c), nil
+	case token.NonDigital:
+		return ast.NonDigital(c), nil
 	case token.LeftParenthesis:
-		_, err := p.nextToken()
-		if err != nil {
-			return nil, err
-		}
 		exp, err := p.parsePrecedence(lowest)
 		if err != nil {
 			return nil, err
@@ -159,6 +190,8 @@ func (p *Parser) parsePrefix() (ast.Expression, error) {
 			return nil, err
 		}
 		return exp, nil
+	case token.Range:
+		return ast.Range(c), nil
 	default:
 		return nil, errors.New("invalid token found at beginning")
 	}
