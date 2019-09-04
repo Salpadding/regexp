@@ -1,6 +1,16 @@
 package fsa
 
-import "errors"
+import (
+	"errors"
+	"io"
+)
+
+
+type Lexer struct {
+	io.RuneReader
+	current rune
+	next    rune
+}
 
 type node struct {
 	token      *token
@@ -60,7 +70,7 @@ func addModifier(tree *node) error {
 		tmp []*node
 		err error
 	)
-		for _, n := range tree.children {
+	for _, n := range tree.children {
 		switch n.token.code {
 		// *, +, ?
 		case tokenClosure, tokenOneOrMore, tokenNoneOrOne:
