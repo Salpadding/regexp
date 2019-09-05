@@ -100,8 +100,8 @@ func (r RightBracket) token() {}
 
 func (r RightBracket) rightBracket() {}
 
-type Range map[rune]rune
+type Ranges map[rune]rune
 
-func (r Range) token() {}
+func (r Ranges) token() {}
 
-func (r Range) rng() {}
+func (r Ranges) ranges() {}

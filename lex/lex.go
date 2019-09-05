@@ -124,7 +124,7 @@ func (l *Lexer) NextToken() (token.Token, error) {
 			l.nextRune()
 			return token.Char(n), nil
 		case '[':
-			r := token.Range{}
+			r := token.Ranges{}
 			for{
 				l.nextRune()
 				_, ok := l.current.(eof)

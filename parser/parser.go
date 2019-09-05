@@ -23,7 +23,7 @@ func (p *Parser) needConcat(t token.Token) bool {
 	switch t.(type) {
 	case token.NonDigital, token.Digital, token.Letters,
 		token.NonLetters, token.RightParenthesis, token.QuestionMark,
-		token.Plus, token.Asterisk, token.Char, token.Range:
+		token.Plus, token.Asterisk, token.Char, token.Ranges:
 		return true
 	default:
 		return false
@@ -190,8 +190,8 @@ func (p *Parser) parsePrefix() (ast.Expression, error) {
 			return nil, err
 		}
 		return exp, nil
-	case token.Range:
-		return ast.Range(c), nil
+	case token.Ranges:
+		return ast.Ranges(c), nil
 	default:
 		return nil, errors.New("invalid token found at beginning")
 	}

@@ -54,6 +54,6 @@ type NonLetters string
 
 func (n NonLetters) expression() {}
 
-type Range map[rune]rune
+type Ranges map[rune]rune
 
-func (r Range) expression() {}
+func (r Ranges) expression() {}
