@@ -1,9 +1,10 @@
 package re
 
 import (
-	"github.com/stretchr/testify/assert"
 	regexp2 "regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMatchEmail(t *testing.T) {
@@ -59,11 +60,11 @@ func TestWisdomURL(t *testing.T) {
 
 func Benchmark1(b *testing.B) {
 	re, err := Compile(`wisdom://([0-9a-f]+@)?((\d+\.\d+\.\d+\.\d+)|[0-9a-zA-Z]+)(:[0-9]+)?`)
-	if err != nil{
+	if err != nil {
 		b.Fail()
 	}
 	b.StartTimer()
-	for i := 0; i < 100000; i++{
+	for i := 0; i < 100000; i++ {
 		re.Match("wisdom://76a3f5787062ffd12425b27e14f29348a7407b42ebfdff8e14543e6356e10530@192.168.0.104:9005")
 	}
 	b.StopTimer()
@@ -71,11 +72,11 @@ func Benchmark1(b *testing.B) {
 
 func Benchmark2(b *testing.B) {
 	re, err := regexp2.Compile(`wisdom://([0-9a-f]+@)?((\d+\.\d+\.\d+\.\d+)|[0-9a-zA-Z]+)(:[0-9]+)?`)
-	if err != nil{
+	if err != nil {
 		b.Fail()
 	}
 	b.StartTimer()
-	for i := 0; i < 100000; i++{
+	for i := 0; i < 100000; i++ {
 		re.MatchString("wisdom://76a3f5787062ffd12425b27e14f29348a7407b42ebfdff8e14543e6356e10530@192.168.0.104:9005")
 	}
 	b.StopTimer()

@@ -98,8 +98,8 @@ func TestWildcard(t *testing.T) {
 func TestRefine(t *testing.T) {
 	d := &DFA{
 		transitions: map[rune]map[state]state{
-			'a': {0: 1, 1: 1, 4: 0, 2: 1, 3: 3, 5: 5,},
-			'b': {1: 4, 0: 2, 2: 3, 3: 2, 4: 5, 5: 4,},
+			'a': {0: 1, 1: 1, 4: 0, 2: 1, 3: 3, 5: 5},
+			'b': {1: 4, 0: 2, 2: 3, 3: 2, 4: 5, 5: 4},
 		},
 		finalStates:  newStateSet(0, 1),
 		maximumState: 5,

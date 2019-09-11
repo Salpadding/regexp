@@ -1,9 +1,10 @@
 package token
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testEnum byte
@@ -49,19 +50,19 @@ func istp2(t testType2) bool {
 
 // 0.25 ns/op
 func Benchmark1(b *testing.B) {
-	for i := 0; i < math.MaxInt32; i++{
+	for i := 0; i < math.MaxInt32; i++ {
 		istp1(tp1("====="))
 	}
 }
 
 // 3589436900 ns/op
 func Benchmark2(b *testing.B) {
-	for i:= 0; i < math.MaxInt32; i++{
+	for i := 0; i < math.MaxInt32; i++ {
 		istp2(tp2("====="))
 	}
 }
 
-func Test(t *testing.T){
+func Test(t *testing.T) {
 	assert.True(t, istp1(tp1("")))
 	assert.True(t, istp1(tp1("2")))
 	assert.False(t, istp1(tp2("")))
