@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test1(t *testing.T){
+func Test1(t *testing.T) {
 	p, err := New(bytes.NewBufferString(`(\d|\w)+@(\d|\w)+\.(\d|\w)+)`))
 	assert.NoError(t, err)
 	var tks []token.Token
-	for{
+	for {
 		_, ok := p.current.(token.EOF)
-		if ok{
+		if ok {
 			break
 		}
 		tks = append(tks, p.current)
@@ -25,7 +25,7 @@ func Test1(t *testing.T){
 	fmt.Printf("%v", tks)
 }
 
-func Test(t *testing.T){
+func Test(t *testing.T) {
 	p, err := New(bytes.NewBufferString(`(\d|\w)+@(\d|\w)+\.(\d|\w)+)`))
 	assert.NoError(t, err)
 	exp, err := p.Parse()
@@ -33,7 +33,7 @@ func Test(t *testing.T){
 	fmt.Printf("%v", exp)
 }
 
-func Test2(t *testing.T){
+func Test2(t *testing.T) {
 	p, err := New(bytes.NewBufferString(`[a-z0-9A-Z]+@[a-z0-9A-Z]+\.[a-z0-9A-Z]+`))
 	assert.NoError(t, err)
 	exp, err := p.Parse()

@@ -11,12 +11,12 @@ import (
 func Test(t *testing.T) {
 	l := New(bytes.NewBufferString(`(\d|\w)+@(\d|\w)+\.(\d|\w)+)`))
 	var tks []token.Token
-	for{
+	for {
 		tk, err := l.NextToken()
-		if err != nil{
+		if err != nil {
 			t.Error(err)
 		}
-		if _, ok := tk.(token.EOF); ok{
+		if _, ok := tk.(token.EOF); ok {
 			break
 		}
 		tks = append(tks, tk)

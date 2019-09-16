@@ -125,16 +125,16 @@ func (l *Lexer) NextToken() (token.Token, error) {
 			return token.Char(n), nil
 		case '[':
 			r := token.Ranges{}
-			for{
+			for {
 				l.nextRune()
 				_, ok := l.current.(eof)
-				if ok{
+				if ok {
 					return nil, errors.New("unexpected eof")
 				}
-				if l.current.rune() == ']'{
+				if l.current.rune() == ']' {
 					break
 				}
-				if l.next.rune() == '-'{
+				if l.next.rune() == '-' {
 					n := l.current.rune()
 					l.nextRune()
 					l.nextRune()

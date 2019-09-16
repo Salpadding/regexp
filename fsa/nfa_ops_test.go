@@ -82,7 +82,7 @@ func TestOrClosureConcat(t *testing.T) {
 	assert.True(t, n.IsAccept())
 }
 
-func TestOneOrMore(t *testing.T){
+func TestOneOrMore(t *testing.T) {
 	n := NewChar('a').oneOrMore()
 	n.InputString("aaaaaaaaaaaaaaaaaaaaaaaaaa")
 	assert.True(t, n.IsAccept())
@@ -90,7 +90,7 @@ func TestOneOrMore(t *testing.T){
 	assert.False(t, n.IsAccept())
 }
 
-func TestNoneOrOne(t *testing.T){
+func TestNoneOrOne(t *testing.T) {
 	n := NewChar('a').noneOrOne()
 	n.InputString("aaaaaaaaaaaaaaaaaaaaaaaaaa")
 	assert.False(t, n.IsAccept())

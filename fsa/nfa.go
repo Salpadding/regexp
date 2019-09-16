@@ -27,9 +27,8 @@ func NewChar(r rune) *NFA {
 
 func newEmpty() *NFA {
 	return &NFA{
-		finalStates: newStateSet(1),
-		transitions: map[rune]map[state]stateSet{
-		},
+		finalStates:  newStateSet(1),
+		transitions:  map[rune]map[state]stateSet{},
 		maximumState: 1,
 	}
 }
